@@ -43,9 +43,9 @@ archives:
 
 dockers_v2:
   - id: ikuai-exporter
+    dockerfile: Dockerfile
     images:
-      - docker.io/jakes/ikuai-exporter
-      - "ghcr.io/jakeslee/{{ .ProjectName }}"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}"
     tags:
       - "{{ if not .Prerelease }}latest{{ end }}"
       - "v{{ .Version }}"

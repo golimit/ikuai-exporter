@@ -1,18 +1,17 @@
-name: publish-release.yml
+name: Publish Release
+
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -31,12 +30,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -44,12 +37,11 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           HEADER: |
             ## Docker Image
             Pull the image from GHCR:
             ```bash
             docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            # or
-            docker pull docker.io/jakes/ikuai-exporter:${{ github.ref_name }}
             ```
             View package details [here](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}).
