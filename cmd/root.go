@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -42,6 +43,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		viper.SetEnvPrefix("IKUAI")
+		viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 		viper.AutomaticEnv()
 		postInitCommands(rootCmd.Commands())
 	})

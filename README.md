@@ -53,22 +53,46 @@ Usage:
 i kuai-exporter server [flags]
 
 Flags:
-    -h, --help                  help for server
-        --insecure-skip         Skip iKuai certificate verification (default true)
-    -l, --level string          Log level (default "info")
-        --modules strings       The modules to be collected. (default [sysStat,lanDevice,interfaceInfo])
-    -p, --password string       The password for the user on iKuai (default "test123")
-        --timeout int           The timeout (seconds) for a request to iKuai API.  (default 2)
-        --url string            iKuai URL (default "http://10.0.1.253")
-    -u, --username string       iKuai username (default "test")
+    -h, --help                        help for server
+        --insecure-skip               Skip iKuai certificate verification (default true)
+    -l, --level string                Log level (default "info")
+        --modules strings             The modules to be collected. (default [sysStat,lanDevice,interfaceInfo,dnat,session])
+    -p, --password string             The password for the user on iKuai (default "test123")
+        --session-detail              Export per-session detail metrics (high cardinality) (default false)
+        --session-detail-limit int    Max number of session detail series (default 200)
+        --timeout int                 The timeout (seconds) for a request to iKuai API.  (default 2)
+        --url string                  iKuai URL (default "http://10.0.1.253")
+    -u, --username string             iKuai username (default "test")
 
 ```
 
 | 变量名           | 说明           | 默认值 |
 |:------------ |:-------------|:----- |
-| modules      | 采集模块         | sysStat,lanDevice,interfaceInfo |
+| modules      | 采集模块         | sysStat,lanDevice,interfaceInfo,dnat,session |
 | insecure-skip | 跳过证书验证       | true |
 | timeout      | 请求超时时间（单位：秒） | 2 |
+| session-detail | 是否导出会话明细指标 | false |
+| session-detail-limit | 会话明细最大条数 | 200 |
+
+### 采集模块
+
+| 模块 | 说明 |
+|:---|:---|
+| sysStat | 系统状态（CPU/内存/版本等） |
+| lanDevice | 内网终端 |
+| interfaceInfo | 接口流量 |
+| dnat | 端口映射规则与每条规则当前连接数 |
+| session | 当前连接会话总数（明细需显式开启） |
+
+### 端口映射 / 会话指标（iKuai 4.x）
+
+| 指标 | 说明 |
+|:---|:---|
+| `ikuai_dnat_info` | 端口映射规则清单 |
+| `ikuai_dnat_total` / `ikuai_dnat_enabled_total` / `ikuai_dnat_disabled_total` | 规则计数 |
+| `ikuai_dnat_connections` | 每条启用规则当前匹配连接数 |
+| `ikuai_session_total` | 当前会话总数 |
+| `ikuai_session_info` | 可选会话明细（`--session-detail`，高基数） |
 
 从 v0.2.1 开始，可以使用环境变量来设置上面的参数，格式为 `IKUAI_XXX`，如 `IKUAI_URL=http://10.0.1.253` 或 `IKUAI_USERNAME=test`。
 

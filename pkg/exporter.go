@@ -19,11 +19,15 @@ var supported_modules = []string{
 	"sysStat",
 	"lanDevice",
 	"interfaceInfo",
+	"dnat",
+	"session",
 }
 
 type IKuaiExporter struct {
-	ikuai   *v4.IKuaiV4
-	modules []string
+	ikuai               *v4.IKuaiV4
+	modules             []string
+	sessionDetail       bool
+	sessionDetailLimit  int
 
 	versionDesc *prometheus.Desc // ikuai 版本
 
@@ -51,11 +55,20 @@ type IKuaiExporter struct {
 	streamDownSpeedDesc *prometheus.Desc // 流量上行速度
 	connCountDesc       *prometheus.Desc // 连接数指标
 
+	// DNAT / Session
+	dnatInfoDesc           *prometheus.Desc
+	dnatTotalDesc          *prometheus.Desc
+	dnatEnabledTotalDesc   *prometheus.Desc
+	dnatDisabledTotalDesc  *prometheus.Desc
+	dnatConnectionsDesc    *prometheus.Desc
+	sessionTotalDesc       *prometheus.Desc
+	sessionInfoDesc        *prometheus.Desc
+
 	// Exporter
 	MetricErrorDesc *prometheus.Desc // 指标获取报错
 }
 
-func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string) *IKuaiExporter {
+func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string, sessionDetail bool, sessionDetailLimit int) *IKuaiExporter {
 	usedModules := lo.Intersect(modules, supported_modules)
 
 	if len(usedModules) == 0 {
@@ -68,9 +81,15 @@ func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string) *IKuaiExporter {
 		"used":       strings.Join(usedModules, ","),
 	}).Info("init exporter modules")
 
+	if sessionDetailLimit <= 0 {
+		sessionDetailLimit = 200
+	}
+
 	return &IKuaiExporter{
-		ikuai:   kuai,
-		modules: usedModules,
+		ikuai:              kuai,
+		modules:            usedModules,
+		sessionDetail:      sessionDetail,
+		sessionDetailLimit: sessionDetailLimit,
 		versionDesc: prometheus.NewDesc("ikuai_version", "IKuai version info",
 			[]string{"version", "arch", "verstring"}, nil),
 		cpuUsageRatioDesc: prometheus.NewDesc("ikuai_cpu_usage_ratio", "IKuai CPU usage ratio",
@@ -105,6 +124,20 @@ func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string) *IKuaiExporter {
 			[]string{"id"}, nil),
 		connCountDesc: prometheus.NewDesc("ikuai_network_conn_count", "",
 			[]string{"id"}, nil),
+		dnatInfoDesc: prometheus.NewDesc("ikuai_dnat_info", "iKuai DNAT/port-mapping rule",
+			[]string{"id", "tagname", "comment", "interface", "protocol", "wan_port", "lan_addr", "lan_port", "enabled"}, nil),
+		dnatTotalDesc: prometheus.NewDesc("ikuai_dnat_total", "Total DNAT rules",
+			nil, nil),
+		dnatEnabledTotalDesc: prometheus.NewDesc("ikuai_dnat_enabled_total", "Enabled DNAT rules",
+			nil, nil),
+		dnatDisabledTotalDesc: prometheus.NewDesc("ikuai_dnat_disabled_total", "Disabled DNAT rules",
+			nil, nil),
+		dnatConnectionsDesc: prometheus.NewDesc("ikuai_dnat_connections", "Current connections attributed to a DNAT rule",
+			[]string{"tagname", "interface", "protocol", "wan_port", "lan_addr", "lan_port"}, nil),
+		sessionTotalDesc: prometheus.NewDesc("ikuai_session_total", "Current connection sessions reported by iKuai",
+			nil, nil),
+		sessionInfoDesc: prometheus.NewDesc("ikuai_session_info", "Optional per-session detail (high cardinality)",
+			[]string{"protocol", "src_addr", "src_port", "dst_addr", "dst_port", "terminal_addr", "app_name"}, nil),
 		MetricErrorDesc: prometheus.NewDesc("ikuai_exporter_metrics_collector_status", "",
 			[]string{"type"}, nil),
 	}
@@ -128,6 +161,13 @@ func (i *IKuaiExporter) Describe(descs chan<- *prometheus.Desc) {
 	descs <- i.streamUpSpeedDesc
 	descs <- i.streamDownSpeedDesc
 	descs <- i.connCountDesc
+	descs <- i.dnatInfoDesc
+	descs <- i.dnatTotalDesc
+	descs <- i.dnatEnabledTotalDesc
+	descs <- i.dnatDisabledTotalDesc
+	descs <- i.dnatConnectionsDesc
+	descs <- i.sessionTotalDesc
+	descs <- i.sessionInfoDesc
 	descs <- i.MetricErrorDesc
 }
 
@@ -282,6 +322,144 @@ func (i *IKuaiExporter) CollectInterfaceInfo(metrics chan<- prometheus.Metric) e
 	return nil
 }
 
+// scrapeSessionCache avoids calling collect_conn twice when both dnat and session modules run.
+type scrapeSessionCache struct {
+	loaded   bool
+	sessions []Session
+	err      error
+}
+
+func (i *IKuaiExporter) loadSessions(cache *scrapeSessionCache) ([]Session, error) {
+	if cache.loaded {
+		return cache.sessions, cache.err
+	}
+	cache.loaded = true
+
+	result, err := ShowCollectConn(i.ikuai.IKuaiBase)
+	if err != nil || !result.Ok() {
+		logrus.WithFields(logrus.Fields{
+			"result": result,
+		}).WithError(err).Error("failed to collect ikuai sessions")
+		if err == nil {
+			err = fmt.Errorf("collect_conn not ok: %+v", result.Status)
+		}
+		cache.err = &CollectError{Err: err, Type: "session"}
+		return nil, cache.err
+	}
+
+	cache.sessions = ParseSessions(result.Results.Conn)
+	return cache.sessions, nil
+}
+
+func (i *IKuaiExporter) CollectDNAT(metrics chan<- prometheus.Metric, cache *scrapeSessionCache) error {
+	result, err := ShowDNAT(i.ikuai.IKuaiBase)
+	if err != nil || !result.Ok() {
+		logrus.WithFields(logrus.Fields{
+			"result": result,
+		}).WithError(err).Error("failed to collect ikuai dnat rules")
+		if err == nil {
+			err = fmt.Errorf("dnat not ok: %+v", result.Status)
+		}
+		return &CollectError{Err: err, Type: "dnat"}
+	}
+
+	rules := ParseDNATRules(result.Results.Data)
+	sessions, sErr := i.loadSessions(cache)
+	if sErr != nil {
+		// DNAT config itself succeeded; keep exporting rules with zero connections.
+		logrus.WithError(sErr).Warn("session data unavailable while collecting dnat")
+		sessions = nil
+	}
+
+	counts := CountDNATConnections(rules, sessions)
+	enabled := 0
+	for _, rule := range rules {
+		state := "no"
+		if rule.Enabled {
+			state = "yes"
+			enabled++
+		}
+
+		metrics <- prometheus.MustNewConstMetric(i.dnatInfoDesc, prometheus.GaugeValue, 1,
+			strconv.FormatInt(rule.ID, 10),
+			rule.Tagname,
+			rule.Comment,
+			rule.Interface,
+			rule.Protocol,
+			rule.WANPort,
+			rule.LANAddr,
+			rule.LANPort,
+			state,
+		)
+
+		if rule.Enabled {
+			metrics <- prometheus.MustNewConstMetric(i.dnatConnectionsDesc, prometheus.GaugeValue,
+				float64(counts[rule.ID]),
+				rule.Tagname,
+				rule.Interface,
+				rule.Protocol,
+				rule.WANPort,
+				rule.LANAddr,
+				rule.LANPort,
+			)
+		}
+	}
+
+	total := result.Results.Total
+	if total == 0 {
+		total = int64(len(rules))
+	}
+	enabledTotal := result.Results.EnabledTotal
+	if enabledTotal == 0 && len(rules) > 0 {
+		enabledTotal = int64(enabled)
+	}
+	disabledTotal := result.Results.DisabledTotal
+	if disabledTotal == 0 && len(rules) > 0 {
+		disabledTotal = int64(len(rules)) - enabledTotal
+	}
+
+	metrics <- prometheus.MustNewConstMetric(i.dnatTotalDesc, prometheus.GaugeValue, float64(total))
+	metrics <- prometheus.MustNewConstMetric(i.dnatEnabledTotalDesc, prometheus.GaugeValue, float64(enabledTotal))
+	metrics <- prometheus.MustNewConstMetric(i.dnatDisabledTotalDesc, prometheus.GaugeValue, float64(disabledTotal))
+
+	return nil
+}
+
+func (i *IKuaiExporter) CollectSession(metrics chan<- prometheus.Metric, cache *scrapeSessionCache) error {
+	sessions, err := i.loadSessions(cache)
+	if err != nil {
+		return err
+	}
+
+	metrics <- prometheus.MustNewConstMetric(i.sessionTotalDesc, prometheus.GaugeValue, float64(len(sessions)))
+
+	if !i.sessionDetail {
+		return nil
+	}
+
+	limit := i.sessionDetailLimit
+	if len(sessions) > limit {
+		logrus.WithFields(logrus.Fields{
+			"total": len(sessions),
+			"limit": limit,
+		}).Warn("session detail truncated to limit")
+		sessions = truncateSessions(sessions, limit)
+	}
+
+	for _, s := range sessions {
+		metrics <- prometheus.MustNewConstMetric(i.sessionInfoDesc, prometheus.GaugeValue, 1,
+			s.Protocol,
+			s.SrcAddr,
+			s.SrcPort,
+			s.DSTAddr,
+			s.DSTPort,
+			s.TerminalAddr,
+			s.AppName,
+		)
+	}
+	return nil
+}
+
 func (i *IKuaiExporter) Collect(metrics chan<- prometheus.Metric) {
 	defer func() {
 		if errRecover := recover(); errRecover != nil {
@@ -293,6 +471,7 @@ func (i *IKuaiExporter) Collect(metrics chan<- prometheus.Metric) {
 	}()
 
 	errCounter := 0
+	cache := &scrapeSessionCache{}
 
 	for _, t := range i.modules {
 		var cErr error
@@ -304,6 +483,10 @@ func (i *IKuaiExporter) Collect(metrics chan<- prometheus.Metric) {
 			cErr = i.CollectLanDevices(metrics)
 		case "interfaceInfo":
 			cErr = i.CollectInterfaceInfo(metrics)
+		case "dnat":
+			cErr = i.CollectDNAT(metrics, cache)
+		case "session":
+			cErr = i.CollectSession(metrics, cache)
 		}
 
 		errStatus := 0
