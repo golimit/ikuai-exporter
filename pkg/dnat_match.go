@@ -6,14 +6,50 @@ import (
 )
 
 // protocolCompatible reports whether a session protocol matches a DNAT rule protocol.
-// Rule protocol "any" or empty matches any session protocol.
+// Rule protocol "any"/empty matches all; "tcp+udp" matches tcp or udp.
 func protocolCompatible(ruleProto, sessionProto string) bool {
 	ruleProto = strings.ToLower(strings.TrimSpace(ruleProto))
 	sessionProto = strings.ToLower(strings.TrimSpace(sessionProto))
 	if ruleProto == "" || ruleProto == "any" || ruleProto == "ip" {
 		return true
 	}
-	return ruleProto == sessionProto
+	if ruleProto == sessionProto {
+		return true
+	}
+	if ruleProto == "tcp+udp" || ruleProto == "udp+tcp" {
+		return sessionProto == "tcp" || sessionProto == "udp"
+	}
+	// session may be "tcp+udp" style too — accept if rule is contained
+	if sessionProto == "tcp+udp" || sessionProto == "udp+tcp" {
+		return ruleProto == "tcp" || ruleProto == "udp"
+	}
+	return false
+}
+
+// portMatches handles single ports and v3 ranges like "32080-32443".
+func portMatches(rulePort, sessionPort string) bool {
+	rulePort = strings.TrimSpace(rulePort)
+	sessionPort = strings.TrimSpace(sessionPort)
+	if rulePort == "" || sessionPort == "" || sessionPort == "--" {
+		return false
+	}
+	if !strings.Contains(rulePort, "-") {
+		return rulePort == sessionPort
+	}
+	parts := strings.SplitN(rulePort, "-", 2)
+	if len(parts) != 2 {
+		return rulePort == sessionPort
+	}
+	sp, err1 := strconv.Atoi(sessionPort)
+	lo, err2 := strconv.Atoi(strings.TrimSpace(parts[0]))
+	hi, err3 := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err1 != nil || err2 != nil || err3 != nil {
+		return rulePort == sessionPort
+	}
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	return sp >= lo && sp <= hi
 }
 
 // isPrivateOrLocalIP is a coarse filter for "not a public client".
@@ -60,10 +96,10 @@ func matchSessionToRule(rule DNATRule, s Session) bool {
 	if !protocolCompatible(rule.Protocol, s.Protocol) {
 		return false
 	}
-	if rule.LANAddr != "" && s.DSTAddr == rule.LANAddr && rule.LANPort != "" && s.DSTPort == rule.LANPort {
+	if rule.LANAddr != "" && s.DSTAddr == rule.LANAddr && portMatches(rule.LANPort, s.DSTPort) {
 		return true
 	}
-	if rule.WANPort != "" && s.DSTPort == rule.WANPort && !isPrivateOrLocalIP(s.SrcAddr) {
+	if portMatches(rule.WANPort, s.DSTPort) && !isPrivateOrLocalIP(s.SrcAddr) {
 		return true
 	}
 	return false

@@ -172,6 +172,60 @@ func ParseSessions(items []collectConnItem) []Session {
 	return sessions
 }
 
+// parseDNATFromMap accepts both v3 (Data/Result/ErrMsg) and v4 (results/code/message) envelopes.
+func parseDNATFromMap(raw map[string]interface{}) ([]DNATRule, error) {
+	if raw == nil {
+		return nil, fmt.Errorf("empty dnat response")
+	}
+
+	// v3 success
+	if msg, _ := raw["ErrMsg"].(string); msg != "" && msg != "Success" {
+		return nil, fmt.Errorf("dnat error: %s", msg)
+	}
+	if code, ok := raw["code"].(float64); ok && code != 0 {
+		return nil, fmt.Errorf("dnat error code %.0f", code)
+	}
+
+	var payload map[string]interface{}
+	if d, ok := raw["Data"].(map[string]interface{}); ok {
+		payload = d
+	} else if r, ok := raw["results"].(map[string]interface{}); ok {
+		payload = r
+	} else {
+		return nil, fmt.Errorf("dnat missing data payload")
+	}
+
+	list, _ := payload["data"].([]interface{})
+	rules := make([]DNATRule, 0, len(list))
+	for _, item := range list {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		rules = append(rules, DNATRule{
+			ID:        int64(toFloat(m["id"])),
+			Enabled:   strings.EqualFold(fmt.Sprint(m["enabled"]), "yes"),
+			Tagname:   firstNonEmpty(fmt.Sprint(m["tagname"]), fmt.Sprint(m["comment"])),
+			Comment:   fmt.Sprint(m["comment"]),
+			Interface: fmt.Sprint(m["interface"]),
+			LANAddr:   fmt.Sprint(m["lan_addr"]),
+			LANPort:   anyToString(m["lan_port"]),
+			WANPort:   anyToString(m["wan_port"]),
+			Protocol:  strings.ToLower(fmt.Sprint(m["protocol"])),
+		})
+	}
+	return rules, nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" && v != "<nil>" {
+			return v
+		}
+	}
+	return ""
+}
+
 func anyToString(v interface{}) string {
 	switch t := v.(type) {
 	case nil:

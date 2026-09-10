@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jakeslee/ikuai"
 	"github.com/jakeslee/ikuai-exporter/cmd/options"
 	"github.com/jakeslee/ikuai-exporter/pkg"
 	"github.com/jakeslee/ikuai-exporter/pkg/version"
@@ -32,19 +31,18 @@ var serverCmd = &cobra.Command{
 		}
 		logrus.SetLevel(level)
 
-		i := ikuai.NewV4(strings.TrimSpace(opts.URL), opts.Username, opts.Password, opts.InsecureSkip, true)
-
-		if level >= logrus.DebugLevel {
-			i.Debug()
+		timeout := time.Duration(opts.Timeout) * time.Second
+		src, err := pkg.NewSource(strings.TrimSpace(opts.URL), opts.Username, opts.Password, opts.InsecureSkip, timeout)
+		if err != nil {
+			return err
 		}
-		i.SetTimeout(time.Duration(opts.Timeout) * time.Second)
 
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(pkg.NewIKuaiExporter(i, opts.Modules, opts.SessionDetail, opts.SessionDetailLimit))
+		registry.MustRegister(pkg.NewIKuaiExporter(src, opts.Modules, opts.SessionDetail, opts.SessionDetailLimit))
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{Registry: registry}))
 
-		logrus.Infof("iKuai exporter %v started on :9090", version.Version())
+		logrus.Infof("iKuai exporter %v started on :9090 (api major=%d)", version.Version(), src.Major())
 		logrus.Fatal(http.ListenAndServe(":9090", nil))
 		return nil
 	},

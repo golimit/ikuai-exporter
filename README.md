@@ -9,14 +9,15 @@
 
 |     版本     | 爱快版本 |              描述              |
 |:----------:|:----:|:----------------------------:|
-| \>= v0.4.0 | 4.0+ | DNAT 端口映射监控、会话总数/明细、DNAT 规则连接数关联 |
+| \>= v0.4.0 | 3.x / 4.0+ | 自动识别版本；DNAT 端口映射监控（两端）；会话总数/明细与 DNAT 连接数关联（Session 仅 4.x） |
 | \>= v0.3.0 | 4.0+ | 支持 iKuai 4.0 版本，不保证兼容 3.0 版本 |
 |   v0.2.x   | 3.x  |       支持 iKuai 3.0 版本        |
 
 #### 新增功能
 
-- `dnat` 模块：端口映射规则清单、启用/禁用计数、每条规则当前连接数（`ikuai_dnat_connections`）
-- `session` 模块：当前会话总数（`ikuai_session_total`），可选会话明细（`ikuai_session_info`）
+- `dnat` 模块：端口映射规则清单、启用/禁用计数、每条规则当前连接数（`ikuai_dnat_connections`）；兼容 iKuai 3.x / 4.x
+- `session` 模块：当前会话总数（`ikuai_session_total`），可选会话明细（`ikuai_session_info`）；**仅 4.x**，3.x 会标记 `collector_status=1`
+- 启动时自动识别 iKuai 3.x / 4.x API
 - 默认可采集模块扩展为 `sysStat,lanDevice,interfaceInfo,dnat,session`
 - 支持 `.env` + `docker compose` 本地构建部署
 - `master` 分支推送自动构建并更新 `latest` 镜像
@@ -112,8 +113,8 @@ Flags:
 | sysStat | 系统状态（CPU/内存/版本等） | 是 |
 | lanDevice | 内网终端 | 是 |
 | interfaceInfo | 接口流量 | 是 |
-| dnat | 端口映射规则与每条规则当前连接数 | 是 |
-| session | 当前连接会话总数 | 是（仅总数；明细需另开） |
+| dnat | 端口映射规则与每条规则当前连接数（3.x / 4.x） | 是 |
+| session | 当前连接会话总数（仅 4.x；3.x 输出 collector_status=1） | 是（仅总数；明细需另开） |
 
 `dnat` 与 `session` 已包含在默认 `modules` 中，**无需额外开启**。Exporter 只读取爱快上已有的端口映射规则，不会在路由器上创建或启用 DNAT。
 
@@ -134,7 +135,7 @@ environment:
     IKUAI_SESSION_DETAIL_LIMIT: "200"
 ```
 
-### 端口映射 / 会话指标（iKuai 4.x）
+### 端口映射 / 会话指标（iKuai 3.x / 4.x）
 
 | 指标 | 说明 |
 |:---|:---|

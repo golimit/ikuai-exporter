@@ -5,11 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/jakeslee/ikuai-exporter/pkg/utils"
-	v4 "github.com/jakeslee/ikuai/v4"
-	action_v4 "github.com/jakeslee/ikuai/v4/action"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
@@ -24,10 +20,10 @@ var supported_modules = []string{
 }
 
 type IKuaiExporter struct {
-	ikuai               *v4.IKuaiV4
-	modules             []string
-	sessionDetail       bool
-	sessionDetailLimit  int
+	source             Source
+	modules            []string
+	sessionDetail      bool
+	sessionDetailLimit int
 
 	versionDesc *prometheus.Desc // ikuai 版本
 
@@ -68,7 +64,7 @@ type IKuaiExporter struct {
 	MetricErrorDesc *prometheus.Desc // 指标获取报错
 }
 
-func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string, sessionDetail bool, sessionDetailLimit int) *IKuaiExporter {
+func NewIKuaiExporter(src Source, modules []string, sessionDetail bool, sessionDetailLimit int) *IKuaiExporter {
 	usedModules := lo.Intersect(modules, supported_modules)
 
 	if len(usedModules) == 0 {
@@ -79,6 +75,7 @@ func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string, sessionDetail bool, se
 		"supported":  strings.Join(supported_modules, ","),
 		"configured": strings.Join(modules, ","),
 		"used":       strings.Join(usedModules, ","),
+		"major":      src.Major(),
 	}).Info("init exporter modules")
 
 	if sessionDetailLimit <= 0 {
@@ -86,7 +83,7 @@ func NewIKuaiExporter(kuai *v4.IKuaiV4, modules []string, sessionDetail bool, se
 	}
 
 	return &IKuaiExporter{
-		ikuai:              kuai,
+		source:             src,
 		modules:            usedModules,
 		sessionDetail:      sessionDetail,
 		sessionDetailLimit: sessionDetailLimit,
@@ -172,115 +169,51 @@ func (i *IKuaiExporter) Describe(descs chan<- *prometheus.Desc) {
 }
 
 func (i *IKuaiExporter) CollectSysStat(metrics chan<- prometheus.Metric) error {
-	stat, err := i.ikuai.ShowSysStat()
-	if err != nil || !stat.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": stat,
-		}).WithError(err).Error("failed to collect ikuai sysStat")
-		return &CollectError{
-			Err:  err,
-			Type: "sysStat",
-		}
+	sysStat, err := i.source.SysStat()
+	if err != nil {
+		logrus.WithError(err).Error("failed to collect ikuai sysStat")
+		return &CollectError{Err: err, Type: "sysStat"}
 	}
-
-	sysStat := stat.Results.SysStat
 
 	metrics <- prometheus.MustNewConstMetric(i.versionDesc, prometheus.GaugeValue, 1,
-		sysStat.Verinfo.Version,
-		sysStat.Verinfo.Arch,
-		sysStat.Verinfo.Verstring)
+		sysStat.Version, sysStat.Arch, sysStat.Verstring)
 
-	if len(sysStat.Cputemp) > 0 {
-		metrics <- prometheus.MustNewConstMetric(i.cpuTempDesc, prometheus.GaugeValue, float64(sysStat.Cputemp[0]))
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"sysStat.Cputemp": sysStat.Cputemp,
-		}).Debug("failed to collect ikuai cpu temp")
+	if len(sysStat.CPUTemp) > 0 {
+		metrics <- prometheus.MustNewConstMetric(i.cpuTempDesc, prometheus.GaugeValue, float64(sysStat.CPUTemp[0]))
 	}
 
-	for idx, item := range sysStat.Cpu {
-		s := item[:len(item)-1]
+	for idx, item := range sysStat.CPU {
+		s := strings.TrimSuffix(item, "%")
 		per, _ := strconv.ParseFloat(s, 64)
-
 		metrics <- prometheus.MustNewConstMetric(i.cpuUsageRatioDesc, prometheus.GaugeValue, per/100,
 			fmt.Sprintf("core/%v", idx))
 	}
 
-	metrics <- prometheus.MustNewConstMetric(i.memSizeDesc, prometheus.GaugeValue, float64(sysStat.Memory.Total))
+	metrics <- prometheus.MustNewConstMetric(i.memSizeDesc, prometheus.GaugeValue, float64(sysStat.MemTotal))
 	metrics <- prometheus.MustNewConstMetric(i.memUsageDesc, prometheus.GaugeValue,
-		float64(sysStat.Memory.Total-sysStat.Memory.Available))
-	metrics <- prometheus.MustNewConstMetric(i.memCachedDesc, prometheus.GaugeValue, float64(sysStat.Memory.Cached))
-	metrics <- prometheus.MustNewConstMetric(i.memBuffersDesc, prometheus.GaugeValue, float64(sysStat.Memory.Buffers))
+		float64(sysStat.MemTotal-sysStat.MemAvail))
+	metrics <- prometheus.MustNewConstMetric(i.memCachedDesc, prometheus.GaugeValue, float64(sysStat.MemCached))
+	metrics <- prometheus.MustNewConstMetric(i.memBuffersDesc, prometheus.GaugeValue, float64(sysStat.MemBuffers))
+	metrics <- prometheus.MustNewConstMetric(i.lanDeviceCountDesc, prometheus.GaugeValue, float64(sysStat.OnlineUser))
 
-	metrics <- prometheus.MustNewConstMetric(i.lanDeviceCountDesc, prometheus.GaugeValue, float64(sysStat.OnlineUser.Count))
-
-	// Host metric
-	metrics <- prometheus.MustNewConstMetric(i.UpTimeDesc, prometheus.CounterValue, float64(sysStat.Uptime),
-		"host")
-
-	metrics <- prometheus.MustNewConstMetric(i.streamUpBytesDesc, prometheus.CounterValue, float64(sysStat.Stream.TotalUp),
-		"host")
-
-	metrics <- prometheus.MustNewConstMetric(i.streamDownBytesDesc, prometheus.CounterValue, float64(sysStat.Stream.TotalDown),
-		"host")
-
-	metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, float64(sysStat.Stream.Upload),
-		"host")
-
-	metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, float64(sysStat.Stream.Download),
-		"host")
-
-	metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, float64(sysStat.Stream.ConnectNum),
-		"host")
-
+	metrics <- prometheus.MustNewConstMetric(i.UpTimeDesc, prometheus.CounterValue, float64(sysStat.Uptime), "host")
+	metrics <- prometheus.MustNewConstMetric(i.streamUpBytesDesc, prometheus.CounterValue, float64(sysStat.StreamUp), "host")
+	metrics <- prometheus.MustNewConstMetric(i.streamDownBytesDesc, prometheus.CounterValue, float64(sysStat.StreamDown), "host")
+	metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, sysStat.Upload, "host")
+	metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, sysStat.Download, "host")
+	metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, sysStat.ConnectNum, "host")
 	return nil
 }
 
 func (i *IKuaiExporter) CollectLanDevices(metrics chan<- prometheus.Metric) error {
-	devices := map[string]action_v4.LanDeviceInfo{}
-	var errs []error
-
-	lanDevice, err := i.ikuai.ShowMonitorLan()
-	if err != nil || !lanDevice.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": utils.ToJsonString(lanDevice),
-		}).WithError(err).Error("failed to collect ikuai lanDevice")
-
-		errs = append(errs, &CollectError{
-			Err:  err,
-			Type: "lanDevice",
-		})
-	} else {
-		for _, device := range lanDevice.Results.Data {
-			deviceId := fmt.Sprintf("device/%v", device.IPAddr)
-
-			if _, ok := devices[deviceId]; !ok {
-				devices[deviceId] = device
-			}
-		}
+	devices, err := i.source.LanDevices()
+	if err != nil {
+		logrus.WithError(err).Error("failed to collect ikuai lanDevice")
+		return &CollectError{Err: err, Type: "lanDevice"}
 	}
 
-	lanDeviceIPV6, err := i.ikuai.ShowMonitorLanIPv6()
-	if err != nil || !lanDeviceIPV6.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": utils.ToJsonString(lanDeviceIPV6),
-		}).WithError(err).Error("failed to collect ikuai lanDeviceIPv6")
-
-		errs = append(errs, &CollectError{
-			Err:  err,
-			Type: "lanDeviceIPv6",
-		})
-	} else {
-		for _, device := range lanDeviceIPV6.Results.Data {
-			deviceId := fmt.Sprintf("device/%v", device.IPAddr)
-
-			if _, ok := devices[deviceId]; !ok {
-				devices[deviceId] = device
-			}
-		}
-	}
-
-	for deviceId, device := range devices {
+	for _, device := range devices {
+		deviceId := fmt.Sprintf("device/%v", device.IPAddr)
 		ipVer := "4"
 		if strings.ContainsAny(device.IPAddr, ":") {
 			ipVer = "6"
@@ -288,37 +221,38 @@ func (i *IKuaiExporter) CollectLanDevices(metrics chan<- prometheus.Metric) erro
 
 		metrics <- prometheus.MustNewConstMetric(i.lanDeviceDesc, prometheus.GaugeValue, 1,
 			deviceId, device.MAC, device.Hostname, device.IPAddr, device.Comment, ipVer)
-
 		metrics <- prometheus.MustNewConstMetric(i.streamUpBytesDesc, prometheus.CounterValue, device.TotalUp, deviceId)
 		metrics <- prometheus.MustNewConstMetric(i.streamDownBytesDesc, prometheus.CounterValue, device.TotalDown, deviceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, float64(device.Upload), deviceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, float64(device.Download), deviceId)
-		metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, float64(device.ConnectNum), deviceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, device.Upload, deviceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, device.Download, deviceId)
+		metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, device.ConnectNum, deviceId)
 	}
-
-	if len(errs) != 0 {
-		return &CollectError{
-			Err:  errors.Join(errs...),
-			Type: "lanDevice",
-		}
-	}
-
 	return nil
 }
 
 func (i *IKuaiExporter) CollectInterfaceInfo(metrics chan<- prometheus.Metric) error {
-	interfaceInfo, err := i.ikuai.ShowMonitorInterface()
-	if err != nil || !interfaceInfo.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": interfaceInfo,
-		}).WithError(err).Error("failed to collect ikuai interfaceInfo")
-		return &CollectError{
-			Err:  err,
-			Type: "interfaceInfo",
-		}
+	ifaces, err := i.source.Interfaces()
+	if err != nil {
+		logrus.WithError(err).Error("failed to collect ikuai interfaceInfo")
+		return &CollectError{Err: err, Type: "interfaceInfo"}
 	}
 
-	i.interfaceMetrics(metrics, interfaceInfo)
+	for _, iface := range ifaces {
+		ifaceId := fmt.Sprintf("iface/%v", iface.Interface)
+		up := 0.0
+		if iface.Up {
+			up = 1
+		}
+		metrics <- prometheus.MustNewConstMetric(i.ifaceInfoDesc, prometheus.GaugeValue, 1,
+			ifaceId, iface.Interface, iface.Comment, iface.Internet, iface.ParentInterface, iface.IPAddr)
+		metrics <- prometheus.MustNewConstMetric(i.UpDesc, prometheus.GaugeValue, up, ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.UpTimeDesc, prometheus.CounterValue, float64(iface.Uptime), ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamUpBytesDesc, prometheus.CounterValue, iface.TotalUp, ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamDownBytesDesc, prometheus.CounterValue, iface.TotalDown, ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, iface.Upload, ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, iface.Download, ifaceId)
+		metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, iface.ConnectNum, ifaceId)
+	}
 	return nil
 }
 
@@ -335,38 +269,29 @@ func (i *IKuaiExporter) loadSessions(cache *scrapeSessionCache) ([]Session, erro
 	}
 	cache.loaded = true
 
-	result, err := ShowCollectConn(i.ikuai.IKuaiBase)
-	if err != nil || !result.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": result,
-		}).WithError(err).Error("failed to collect ikuai sessions")
-		if err == nil {
-			err = fmt.Errorf("collect_conn not ok: %+v", result.Status)
+	sessions, err := i.source.Sessions()
+	if err != nil {
+		if errors.Is(err, ErrSessionUnsupported) {
+			logrus.Warn("session API not available on this iKuai version")
+		} else {
+			logrus.WithError(err).Error("failed to collect ikuai sessions")
 		}
 		cache.err = &CollectError{Err: err, Type: "session"}
 		return nil, cache.err
 	}
-
-	cache.sessions = ParseSessions(result.Results.Conn)
+	cache.sessions = sessions
 	return cache.sessions, nil
 }
 
 func (i *IKuaiExporter) CollectDNAT(metrics chan<- prometheus.Metric, cache *scrapeSessionCache) error {
-	result, err := ShowDNAT(i.ikuai.IKuaiBase)
-	if err != nil || !result.Ok() {
-		logrus.WithFields(logrus.Fields{
-			"result": result,
-		}).WithError(err).Error("failed to collect ikuai dnat rules")
-		if err == nil {
-			err = fmt.Errorf("dnat not ok: %+v", result.Status)
-		}
+	rules, err := i.source.DNAT()
+	if err != nil {
+		logrus.WithError(err).Error("failed to collect ikuai dnat rules")
 		return &CollectError{Err: err, Type: "dnat"}
 	}
 
-	rules := ParseDNATRules(result.Results.Data)
 	sessions, sErr := i.loadSessions(cache)
 	if sErr != nil {
-		// DNAT config itself succeeded; keep exporting rules with zero connections.
 		logrus.WithError(sErr).Warn("session data unavailable while collecting dnat")
 		sessions = nil
 	}
@@ -405,23 +330,9 @@ func (i *IKuaiExporter) CollectDNAT(metrics chan<- prometheus.Metric, cache *scr
 		}
 	}
 
-	total := result.Results.Total
-	if total == 0 {
-		total = int64(len(rules))
-	}
-	enabledTotal := result.Results.EnabledTotal
-	if enabledTotal == 0 && len(rules) > 0 {
-		enabledTotal = int64(enabled)
-	}
-	disabledTotal := result.Results.DisabledTotal
-	if disabledTotal == 0 && len(rules) > 0 {
-		disabledTotal = int64(len(rules)) - enabledTotal
-	}
-
-	metrics <- prometheus.MustNewConstMetric(i.dnatTotalDesc, prometheus.GaugeValue, float64(total))
-	metrics <- prometheus.MustNewConstMetric(i.dnatEnabledTotalDesc, prometheus.GaugeValue, float64(enabledTotal))
-	metrics <- prometheus.MustNewConstMetric(i.dnatDisabledTotalDesc, prometheus.GaugeValue, float64(disabledTotal))
-
+	metrics <- prometheus.MustNewConstMetric(i.dnatTotalDesc, prometheus.GaugeValue, float64(len(rules)))
+	metrics <- prometheus.MustNewConstMetric(i.dnatEnabledTotalDesc, prometheus.GaugeValue, float64(enabled))
+	metrics <- prometheus.MustNewConstMetric(i.dnatDisabledTotalDesc, prometheus.GaugeValue, float64(len(rules)-enabled))
 	return nil
 }
 
@@ -505,51 +416,4 @@ func (i *IKuaiExporter) Collect(metrics chan<- prometheus.Metric) {
 	}
 
 	metrics <- prometheus.MustNewConstMetric(i.UpDesc, prometheus.GaugeValue, 1, "host")
-}
-
-func (i *IKuaiExporter) interfaceMetrics(metrics chan<- prometheus.Metric, monitorInterface *action_v4.ShowMonitorInterfaceResult) {
-	for _, iface := range monitorInterface.Results.IfaceStream {
-		internet := ""
-		parentIface := ""
-		ifaceUp := 1
-		ifaceId := fmt.Sprintf("iface/%v", iface.Interface)
-		ifaceUptime := int64(0)
-
-		for _, ifaceCheck := range monitorInterface.Results.IfaceCheck {
-			if ifaceCheck.Interface == iface.Interface {
-				internet = ifaceCheck.Internet
-				parentIface = ifaceCheck.ParentInterface
-
-				if ifaceCheck.Result != "success" {
-					ifaceUp = 0
-				} else {
-					updateTime, err := strconv.ParseInt(ifaceCheck.Updatetime, 10, 64)
-					if err == nil {
-						ifaceUptime = time.Now().Unix() - updateTime
-					}
-				}
-			}
-		}
-
-		metrics <- prometheus.MustNewConstMetric(i.ifaceInfoDesc, prometheus.GaugeValue, 1,
-			ifaceId, iface.Interface, iface.Comment, internet, parentIface, iface.IPAddr)
-
-		metrics <- prometheus.MustNewConstMetric(i.UpDesc, prometheus.GaugeValue, float64(ifaceUp), ifaceId)
-		metrics <- prometheus.MustNewConstMetric(i.UpTimeDesc, prometheus.CounterValue, float64(ifaceUptime), ifaceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamUpBytesDesc, prometheus.CounterValue, float64(iface.TotalUp), ifaceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamDownBytesDesc, prometheus.CounterValue, float64(iface.TotalDown), ifaceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamUpSpeedDesc, prometheus.GaugeValue, float64(iface.Upload), ifaceId)
-		metrics <- prometheus.MustNewConstMetric(i.streamDownSpeedDesc, prometheus.GaugeValue, float64(iface.Download), ifaceId)
-
-		ifaceConn, nErr := strconv.ParseInt(iface.ConnectNum, 10, 64)
-		if nErr != nil {
-			logrus.WithFields(logrus.Fields{
-				"iface":      iface.Interface,
-				"connectNum": iface.ConnectNum,
-			}).WithError(nErr).Debug("failed to parse iface connect num")
-			ifaceConn = 0
-		}
-
-		metrics <- prometheus.MustNewConstMetric(i.connCountDesc, prometheus.GaugeValue, float64(ifaceConn), ifaceId)
-	}
 }
