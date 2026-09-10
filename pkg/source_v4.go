@@ -191,6 +191,17 @@ func (s *sourceV4) CountDNATConnections(rules []DNATRule, sessions []Session) (m
 	return CountDNATConnections(rules, sessions), nil
 }
 
+func (s *sourceV4) ListDNATSessions(rules []DNATRule, sessions []Session) ([]DNATSessionDetail, error) {
+	if sessions == nil {
+		fetched, err := s.Sessions()
+		if err != nil {
+			return nil, err
+		}
+		sessions = fetched
+	}
+	return MatchDNATSessions(rules, sessions), nil
+}
+
 func parseFloatString(s string) float64 {
 	f, err := parseFloat(s)
 	if err != nil {

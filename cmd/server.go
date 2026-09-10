@@ -38,7 +38,7 @@ var serverCmd = &cobra.Command{
 		}
 
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(pkg.NewIKuaiExporter(src, opts.Modules, opts.SessionDetail, opts.SessionDetailLimit))
+		registry.MustRegister(pkg.NewIKuaiExporter(src, opts.Modules, opts.SessionDetail, opts.SessionDetailLimit, opts.DNATSessionDetail, opts.DNATSessionDetailLimit))
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{Registry: registry}))
 
@@ -68,6 +68,8 @@ func init() {
 	serverCmd.Flags().StringSliceVar(&opts.Modules, "modules", opts.Modules, "The modules to be collected.")
 	serverCmd.Flags().BoolVar(&opts.SessionDetail, "session-detail", opts.SessionDetail, "Export per-session detail metrics (high cardinality)")
 	serverCmd.Flags().IntVar(&opts.SessionDetailLimit, "session-detail-limit", opts.SessionDetailLimit, "Max number of session detail series")
+	serverCmd.Flags().BoolVar(&opts.DNATSessionDetail, "dnat-session-detail", opts.DNATSessionDetail, "Export per-connection DNAT inbound session detail metrics")
+	serverCmd.Flags().IntVar(&opts.DNATSessionDetailLimit, "dnat-session-detail-limit", opts.DNATSessionDetailLimit, "Max number of DNAT session detail series")
 	serverCmd.Flags().StringVarP(&opts.Level, "level", "l", opts.Level, "Log level")
 
 	viper.BindEnv("url", "IK_URL")
@@ -75,4 +77,6 @@ func init() {
 	viper.BindEnv("password", "IK_PWD")
 	viper.BindEnv("session-detail", "IKUAI_SESSION_DETAIL")
 	viper.BindEnv("session-detail-limit", "IKUAI_SESSION_DETAIL_LIMIT")
+	viper.BindEnv("dnat-session-detail", "IKUAI_DNAT_SESSION_DETAIL")
+	viper.BindEnv("dnat-session-detail-limit", "IKUAI_DNAT_SESSION_DETAIL_LIMIT")
 }

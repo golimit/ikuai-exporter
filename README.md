@@ -49,7 +49,8 @@ iKuai 设备
 | 连接数（host/iface/device） | 是 | 是 |
 | DNAT 端口映射清单 | 是 | 是 |
 | 每条 DNAT 当前连接数 | 是（经 `monitor_lanip` 按内网端口统计） | 是（经 `collect_conn` 会话匹配） |
-| 当前会话总数 / 明细 | 否（优雅降级） | 是 |
+| DNAT 入站连接明细（入站 IP / Dest IP） | 是（经 `monitor_lanip`，尽力展示） | 是（经 `collect_conn` DNAT 匹配） |
+| 当前会话总数 / 全量明细 | 否（优雅降级） | 是 |
 | Grafana 共用 Dashboard | 是（[v13 Dashboard](examples/grafana-dashboard.json)） | 是 |
 
 > 3.x 端口映射支持 `tcp+udp`、端口区间（如 `32080-32443`）；`interface` 为接口名（可能是 `all`）。4.x 的 `interface` 多为 WAN IP 或 `wan1,wan2,...`。
@@ -132,6 +133,7 @@ services:
 - `ikuai_version{version="..."}` 版本是否正确
 - `ikuai_exporter_metrics_collector_status` 各模块是否为 `0`（3.x 的 `session` 为 `1` 属预期）
 - `ikuai_dnat_info` 是否出现已有端口映射
+- `ikuai_dnat_session_info` 是否在活跃 DNAT 连接时出现入站 IP / Dest IP
 
 ## 参数说明
 
@@ -147,6 +149,8 @@ Flags:
     -l, --level string                Log level (default "info")
         --modules strings             The modules to be collected. (default [sysStat,lanDevice,interfaceInfo,dnat,session])
     -p, --password string             The password for the user on iKuai (default "test123")
+        --dnat-session-detail         Export per-connection DNAT inbound session detail metrics (default true)
+        --dnat-session-detail-limit int Max number of DNAT session detail series (default 500)
         --session-detail              Export per-session detail metrics (high cardinality) (default false)
         --session-detail-limit int    Max number of session detail series (default 200)
         --timeout int                 The timeout (seconds) for a request to iKuai API. (default 2)
@@ -162,8 +166,10 @@ Flags:
 | modules | `IKUAI_MODULES` | 采集模块（逗号分隔） | `sysStat,lanDevice,interfaceInfo,dnat,session` |
 | insecure-skip | `IKUAI_INSECURE_SKIP` | 跳过 HTTPS 证书验证 | `true` |
 | timeout | `IKUAI_TIMEOUT` | 请求超时（秒） | `2` |
-| session-detail | `IKUAI_SESSION_DETAIL` | 导出会话明细指标 | `false` |
-| session-detail-limit | `IKUAI_SESSION_DETAIL_LIMIT` | 明细最大条数 | `200` |
+| dnat-session-detail | `IKUAI_DNAT_SESSION_DETAIL` | 导出 DNAT 入站连接明细 | `true` |
+| dnat-session-detail-limit | `IKUAI_DNAT_SESSION_DETAIL_LIMIT` | DNAT 明细最大条数 | `500` |
+| session-detail | `IKUAI_SESSION_DETAIL` | 导出全量会话明细指标 | `false` |
+| session-detail-limit | `IKUAI_SESSION_DETAIL_LIMIT` | 全量明细最大条数 | `200` |
 
 环境变量格式为 `IKUAI_XXX`（flag 中的 `-` 对应 `_`）。
 
@@ -218,8 +224,9 @@ environment:
 | `ikuai_dnat_info` | 端口映射规则清单（含 enabled、协议、WAN/内网端口等） |
 | `ikuai_dnat_total` / `ikuai_dnat_enabled_total` / `ikuai_dnat_disabled_total` | 规则计数 |
 | `ikuai_dnat_connections` | 每条**启用**规则当前匹配连接数 |
+| `ikuai_dnat_session_info` | 端口映射入站连接明细（入站 IP、Dest IP 等；**默认开启**） |
 | `ikuai_session_total` | 当前会话总数（仅 4.x） |
-| `ikuai_session_info` | 可选会话明细（需 `IKUAI_SESSION_DETAIL=true`，高基数） |
+| `ikuai_session_info` | 可选全量会话明细（需 `IKUAI_SESSION_DETAIL=true`，高基数，非 DNAT 专用） |
 
 #### DNAT 连接数统计方式
 
@@ -229,6 +236,23 @@ environment:
 | **4.x** | `collect_conn` 全量会话表 | 见下方关联规则 |
 
 > 3.x 统计的是内网主机上该服务端口的连接数（与 iKuai UI「当前连接」语义接近）；若同一端口也被内网直连访问，会一并计入。
+
+#### DNAT 入站连接明细
+
+`ikuai_dnat_session_info` 仅导出归属到 DNAT 规则的连接，适合回答「谁通过端口映射连进来了」：
+
+| Label | 含义 |
+|:---|:---|
+| `tagname` / `interface` / `wan_port` | 端口映射规则信息 |
+| `src_addr` / `src_port` | 入站 IP / 端口（外部客户端） |
+| `dst_addr` / `dst_port` | Dest IP / 端口（内网目标） |
+
+| 版本 | 数据来源 | 说明 |
+|:---|:---|:---|
+| **4.x** | `collect_conn` + DNAT 双规则匹配 | post-DNAT / pre-DNAT 地址自动归一化 |
+| **3.x** | `monitor_lanip`（按 `lan_addr` 查内网主机连接） | 入站 IP 为内网主机视角的对端地址；若网关 SNAT，可能显示网关内网 IP 而非真实公网客户端 |
+
+默认开启，受 `dnat-session-detail-limit`（默认 500）截断。可用 `IKUAI_DNAT_SESSION_DETAIL=false` 关闭。
 
 #### DNAT 会话关联规则（4.x）
 
@@ -241,12 +265,16 @@ environment:
 
 #### 高基数控制（重要）
 
-- 默认**不把公网 IP / 源端口**写入 Prometheus label。
-- 明细 `ikuai_session_info` 默认关闭；开启后受 `session-detail-limit`（默认 200）截断。
+- `ikuai_dnat_session_info` 默认开启，基数与 DNAT 活跃连接数成正比（通常远小于全量会话），受 `dnat-session-detail-limit`（默认 500）截断。
+- 全量 `ikuai_session_info` 默认关闭；开启后受 `session-detail-limit`（默认 200）截断，且包含大量内网出站连接，**不适合**查看端口映射入站。
 
 ```yaml
 environment:
-    IKUAI_SESSION_DETAIL: "true"
+    # DNAT 入站明细（默认已开启，一般无需配置）
+    IKUAI_DNAT_SESSION_DETAIL: "true"
+    IKUAI_DNAT_SESSION_DETAIL_LIMIT: "500"
+    # 全量会话明细（非 DNAT 专用，默认关闭）
+    IKUAI_SESSION_DETAIL: "false"
     IKUAI_SESSION_DETAIL_LIMIT: "200"
 ```
 
@@ -257,7 +285,7 @@ environment:
 | 项 | 值 |
 |:---|:---|
 | 格式 | Grafana **v13+** Dynamic Dashboard（v2 schema，`elements` + `GridLayout`） |
-| 面板数 | 24 |
+| 面板数 | 25 |
 | 要求 | Grafana ≥ 13.0，Prometheus 数据源 |
 | 导入 | Dashboard → New → Import → Upload JSON file |
 
@@ -272,8 +300,8 @@ environment:
 | 网络 · 全部接口 | Interface Network IO/s | 全部 `iface/*` 接口 |
 | 网络 · 终端 | 在线终端表、Device IO/s、流量统计 | `ikuai_device_info` join；终端表含 IP 版本与连接数 |
 | DNAT | 规则数 / 启用 / 禁用 / 映射连接 | `ikuai_dnat_*` 系列 |
-| DNAT · 明细 | 端口映射规则、端口映射当前连接 | `ikuai_dnat_info` 表（enabled 中文化）、`ikuai_dnat_connections` |
-| 会话 | 当前会话 / 会话明细（可选） | `ikuai_session_total`（**仅 4.x**）；明细需 `IKUAI_SESSION_DETAIL=true` |
+| DNAT · 明细 | 端口映射规则、连接数、连接明细 | `ikuai_dnat_info`；`ikuai_dnat_connections`（每规则连接数）；`ikuai_dnat_session_info`（入站 IP / Dest IP） |
+| 会话 | 当前会话 / 全量会话明细（可选） | `ikuai_session_total`（**仅 4.x**）；全量明细需 `IKUAI_SESSION_DETAIL=true` |
 
 ### 变量
 

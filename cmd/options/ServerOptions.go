@@ -10,8 +10,10 @@ type ServerOptions struct {
 	InsecureSkip        bool     `json:"insecureSkip"`
 	Timeout             int      `json:"timeout"`
 	Modules             []string `json:"modules"`
-	SessionDetail       bool     `json:"sessionDetail"`
-	SessionDetailLimit  int      `json:"sessionDetailLimit"`
+	SessionDetail          bool `json:"sessionDetail"`
+	SessionDetailLimit     int  `json:"sessionDetailLimit"`
+	DNATSessionDetail      bool `json:"dnatSessionDetail"`
+	DNATSessionDetailLimit int  `json:"dnatSessionDetailLimit"`
 }
 
 func NewServerOptions() *ServerOptions {
@@ -29,7 +31,9 @@ func NewServerOptions() *ServerOptions {
 			"dnat",
 			"session",
 		},
-		SessionDetail:      false,
-		SessionDetailLimit: 200,
+		SessionDetail:          false,
+		SessionDetailLimit:     200,
+		DNATSessionDetail:      true,
+		DNATSessionDetailLimit: 500,
 	}
 }

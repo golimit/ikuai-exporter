@@ -143,6 +143,56 @@ func TestIsPrivateOrLocalIP(t *testing.T) {
 	}
 }
 
+func TestMatchDNATSessionsPostDNAT(t *testing.T) {
+	rules := []DNATRule{
+		{ID: 1, Enabled: true, Protocol: "tcp", WANPort: "3000", LANAddr: "192.168.80.25", LANPort: "3000", Tagname: "svc"},
+	}
+	sessions := []Session{
+		{Protocol: "tcp", SrcAddr: "1.2.3.4", SrcPort: "52133", DSTAddr: "192.168.80.25", DSTPort: "3000"},
+	}
+	details := MatchDNATSessions(rules, sessions)
+	if len(details) != 1 {
+		t.Fatalf("expected 1 detail, got %d", len(details))
+	}
+	d := details[0]
+	if d.SrcAddr != "1.2.3.4" || d.SrcPort != "52133" || d.DstAddr != "192.168.80.25" || d.DstPort != "3000" {
+		t.Fatalf("unexpected post-DNAT detail: %+v", d)
+	}
+}
+
+func TestMatchDNATSessionsPreDNAT(t *testing.T) {
+	rules := []DNATRule{
+		{ID: 1, Enabled: true, Protocol: "tcp", WANPort: "3000", LANAddr: "192.168.80.25", LANPort: "3000", Tagname: "svc"},
+	}
+	sessions := []Session{
+		{Protocol: "tcp", SrcAddr: "8.8.8.8", SrcPort: "61231", DSTAddr: "192.168.31.250", DSTPort: "3000"},
+	}
+	details := MatchDNATSessions(rules, sessions)
+	if len(details) != 1 {
+		t.Fatalf("expected 1 detail, got %d", len(details))
+	}
+	d := details[0]
+	if d.SrcAddr != "8.8.8.8" || d.DstAddr != "192.168.80.25" || d.DstPort != "3000" {
+		t.Fatalf("unexpected pre-DNAT detail: %+v", d)
+	}
+}
+
+func TestCountDNATConnectionsFromDetails(t *testing.T) {
+	rules := []DNATRule{
+		{ID: 1, Enabled: true, Tagname: "a"},
+		{ID: 2, Enabled: true, Tagname: "b"},
+	}
+	details := []DNATSessionDetail{
+		{Rule: rules[0]},
+		{Rule: rules[0]},
+		{Rule: rules[1]},
+	}
+	counts := CountDNATConnectionsFromDetails(rules, details)
+	if counts[1] != 2 || counts[2] != 1 {
+		t.Fatalf("unexpected counts: %+v", counts)
+	}
+}
+
 func TestTruncateSessions(t *testing.T) {
 	sessions := make([]Session, 5)
 	got := truncateSessions(sessions, 2)

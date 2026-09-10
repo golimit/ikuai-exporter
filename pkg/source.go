@@ -74,6 +74,8 @@ type Source interface {
 	// CountDNATConnections returns per-rule connection counts.
 	// sessions is used by v4 (collect_conn); v3 ignores it and uses monitor_lanip.
 	CountDNATConnections(rules []DNATRule, sessions []Session) (map[int64]int, error)
+	// ListDNATSessions returns per-connection detail for DNAT-matched inbound sessions.
+	ListDNATSessions(rules []DNATRule, sessions []Session) ([]DNATSessionDetail, error)
 }
 
 // ParseMajor extracts the major version from a version string like "3.7.15" or "4.0.1".

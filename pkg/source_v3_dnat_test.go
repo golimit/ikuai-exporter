@@ -40,7 +40,8 @@ func TestParseLanConnectionsFromMapV3Envelope(t *testing.T) {
 	if len(conns) != 3 {
 		t.Fatalf("expected 3 connections, got %d", len(conns))
 	}
-	if conns[0].SrcPort != "5173" || conns[0].Protocol != "tcp" {
+	if conns[0].SrcPort != "5173" || conns[0].Protocol != "tcp" ||
+		conns[0].DstAddr != "192.168.85.101" || conns[0].DstPort != "54131" {
 		t.Fatalf("unexpected first conn: %+v", conns[0])
 	}
 	if conns[2].SrcPort != "42405" || conns[2].Protocol != "udp" {
@@ -91,6 +92,25 @@ func TestCountV3DNATConnectionsFromLanIP(t *testing.T) {
 	}
 	if _, ok := counts[5]; ok {
 		t.Fatal("disabled rule should not be in counts")
+	}
+}
+
+func TestMatchV3DNATSessions(t *testing.T) {
+	rules := []DNATRule{
+		{ID: 1, Enabled: true, Protocol: "tcp", LANAddr: "192.168.80.210", LANPort: "5173", Tagname: "svc"},
+	}
+	connByIP := map[string][]lanConnItem{
+		"192.168.80.210": {
+			{Protocol: "tcp", SrcPort: "5173", DstAddr: "8.8.8.8", DstPort: "42135"},
+		},
+	}
+	details := matchV3DNATSessions(rules, connByIP)
+	if len(details) != 1 {
+		t.Fatalf("expected 1 detail, got %d", len(details))
+	}
+	d := details[0]
+	if d.SrcAddr != "8.8.8.8" || d.SrcPort != "42135" || d.DstAddr != "192.168.80.210" || d.DstPort != "5173" {
+		t.Fatalf("unexpected v3 detail: %+v", d)
 	}
 }
 

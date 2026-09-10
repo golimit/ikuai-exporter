@@ -166,12 +166,16 @@ func (s *sourceV3) Sessions() ([]Session, error) {
 }
 
 // lanConnItem is one connection row from v3 monitor_lanip TYPE=conn,conn_num.
+// From the monitored LAN host's perspective: src_port is the local service port,
+// dst_addr/dst_port is the remote peer.
 type lanConnItem struct {
 	Protocol string
 	SrcPort  string
+	DstAddr  string
+	DstPort  string
 }
 
-func (s *sourceV3) CountDNATConnections(rules []DNATRule, _ []Session) (map[int64]int, error) {
+func (s *sourceV3) fetchLanConnByIP(rules []DNATRule) (map[string][]lanConnItem, error) {
 	connByIP := make(map[string][]lanConnItem)
 	for _, rule := range rules {
 		if !rule.Enabled || rule.LANAddr == "" {
@@ -186,26 +190,49 @@ func (s *sourceV3) CountDNATConnections(rules []DNATRule, _ []Session) (map[int6
 		}
 		connByIP[rule.LANAddr] = fetched
 	}
+	return connByIP, nil
+}
+
+func (s *sourceV3) CountDNATConnections(rules []DNATRule, _ []Session) (map[int64]int, error) {
+	connByIP, err := s.fetchLanConnByIP(rules)
+	if err != nil {
+		return nil, err
+	}
 	return countV3DNATFromLanIP(rules, connByIP), nil
 }
 
+func (s *sourceV3) ListDNATSessions(rules []DNATRule, _ []Session) ([]DNATSessionDetail, error) {
+	connByIP, err := s.fetchLanConnByIP(rules)
+	if err != nil {
+		return nil, err
+	}
+	return matchV3DNATSessions(rules, connByIP), nil
+}
+
 func countV3DNATFromLanIP(rules []DNATRule, connByIP map[string][]lanConnItem) map[int64]int {
-	counts := make(map[int64]int, len(rules))
+	return CountDNATConnectionsFromDetails(rules, matchV3DNATSessions(rules, connByIP))
+}
+
+func matchV3DNATSessions(rules []DNATRule, connByIP map[string][]lanConnItem) []DNATSessionDetail {
+	out := make([]DNATSessionDetail, 0)
 	for _, rule := range rules {
-		if !rule.Enabled {
-			continue
-		}
-		counts[rule.ID] = 0
-		if rule.LANAddr == "" {
+		if !rule.Enabled || rule.LANAddr == "" {
 			continue
 		}
 		for _, c := range connByIP[rule.LANAddr] {
-			if protocolCompatible(rule.Protocol, c.Protocol) && portMatches(rule.LANPort, c.SrcPort) {
-				counts[rule.ID]++
+			if !protocolCompatible(rule.Protocol, c.Protocol) || !portMatches(rule.LANPort, c.SrcPort) {
+				continue
 			}
+			out = append(out, DNATSessionDetail{
+				Rule:    rule,
+				SrcAddr: c.DstAddr,
+				SrcPort: c.DstPort,
+				DstAddr: rule.LANAddr,
+				DstPort: c.SrcPort,
+			})
 		}
 	}
-	return counts
+	return out
 }
 
 func (s *sourceV3) fetchLanConnections(ip string) ([]lanConnItem, error) {
@@ -255,6 +282,8 @@ func parseLanConnectionsFromMap(raw map[string]interface{}) ([]lanConnItem, erro
 		out = append(out, lanConnItem{
 			Protocol: strings.ToLower(fmt.Sprint(m["protocol"])),
 			SrcPort:  anyToString(m["src_port"]),
+			DstAddr:  anyToString(m["dst_addr"]),
+			DstPort:  anyToString(m["dst_port"]),
 		})
 	}
 	return out, nil
