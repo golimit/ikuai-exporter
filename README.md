@@ -1,24 +1,32 @@
 # iKuai Exporter
-![GitHub Release](https://img.shields.io/github/v/release/jakeslee/ikuai-exporter?include_prereleases)
+![GitHub Release](https://img.shields.io/github/v/release/golimit/ikuai-exporter?include_prereleases)
 
-一个用于获取采集爱快路由的统计数据，并导出为 Prometheus 格式的 Exporter。
+一个用于采集爱快路由统计数据，并导出为 Prometheus 格式的 Exporter。
 
+本仓库基于 [jakeslee/ikuai-exporter](https://github.com/jakeslee/ikuai-exporter) 二次开发，镜像由 GitHub Actions 自动构建并推送到 GHCR。
 
 ### 版本
 
 |     版本     | 爱快版本 |              描述              |
 |:----------:|:----:|:----------------------------:|
+| \>= v0.4.0 | 4.0+ | DNAT 端口映射监控、会话总数/明细、DNAT 规则连接数关联 |
 | \>= v0.3.0 | 4.0+ | 支持 iKuai 4.0 版本，不保证兼容 3.0 版本 |
 |   v0.2.x   | 3.x  |       支持 iKuai 3.0 版本        |
 
+#### 新增功能
+
+- `dnat` 模块：端口映射规则清单、启用/禁用计数、每条规则当前连接数（`ikuai_dnat_connections`）
+- `session` 模块：当前会话总数（`ikuai_session_total`），可选会话明细（`ikuai_session_info`）
+- 默认可采集模块扩展为 `sysStat,lanDevice,interfaceInfo,dnat,session`
+- 支持 `.env` + `docker compose` 本地构建部署
+- `master` 分支推送自动构建并更新 `latest` 镜像
+
 ### 部署
 
-部署下面的容器，配置容器环境变量，设置爱快地址和登录密码。
+拉取预构建镜像：
 
 ```shell
-docker pull ghcr.io/jakeslee/ikuai-exporter:latest
-# or
-docker pull docker.io/jakes/ikuai-exporter:latest
+docker pull ghcr.io/golimit/ikuai-exporter:latest
 ```
 
 使用 docker-compose 部署（预构建镜像）：
@@ -26,7 +34,7 @@ docker pull docker.io/jakes/ikuai-exporter:latest
 ```yaml
 services:
     ikuai-exporter:
-        image: ghcr.io/jakeslee/ikuai-exporter:latest
+        image: ghcr.io/golimit/ikuai-exporter:latest
         restart: always
         environment:
             IKUAI_URL: "http://10.0.1.253"
