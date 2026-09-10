@@ -1,0 +1,11 @@
+services:
+    ikuai-exporter:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: local
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - "9401:9090"

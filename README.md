@@ -21,7 +21,7 @@ docker pull ghcr.io/jakeslee/ikuai-exporter:latest
 docker pull docker.io/jakes/ikuai-exporter:latest
 ```
 
-使用 docker-compose 部署：
+使用 docker-compose 部署（预构建镜像）：
 
 ```yaml
 services:
@@ -36,7 +36,27 @@ services:
             - "9090:9090"
 ```
 
-部署完成后，访问 `http://IP:9090/metrics` 验证运行情况。
+使用本地源码构建（项目根目录已提供 `docker-compose.yaml`）：
+
+```shell
+cp .env.example .env
+# 编辑 .env，填入爱快地址与登录凭据
+docker compose up -d --build
+```
+
+`docker-compose.yaml` 通过 `env_file: .env` 加载配置，`.env` 已加入 `.gitignore`，请勿提交真实凭据。可参考 `.env.example`：
+
+```dotenv
+IKUAI_URL=http://10.0.1.253
+IKUAI_USERNAME=test
+IKUAI_PASSWORD=test123
+IKUAI_SESSION_DETAIL=false
+IKUAI_SESSION_DETAIL_LIMIT=200
+```
+
+修改本地代码后需加 `--build` 重新构建镜像，否则会复用旧镜像。
+
+部署完成后，访问 `http://IP:9090/metrics`（或自定义映射端口，如 `9401`）验证运行情况。可检查 `ikuai_exporter_metrics_collector_status` 是否为 `0`（成功）。
 
 接下来将 exporter 的采集地址 IP 配置到 Prometheus 的 `scrape_configs` 中就可开始使用。
 
@@ -66,23 +86,45 @@ Flags:
 
 ```
 
-| 变量名           | 说明           | 默认值 |
-|:------------ |:-------------|:----- |
-| modules      | 采集模块         | sysStat,lanDevice,interfaceInfo,dnat,session |
-| insecure-skip | 跳过证书验证       | true |
-| timeout      | 请求超时时间（单位：秒） | 2 |
-| session-detail | 是否导出会话明细指标 | false |
-| session-detail-limit | 会话明细最大条数 | 200 |
+| 变量名 | 环境变量 | 说明 | 默认值 |
+|:------|:--------|:-----|:-----|
+| url | `IKUAI_URL` | 爱快地址 | `http://10.0.1.253` |
+| username | `IKUAI_USERNAME` | 登录用户名 | `test` |
+| password | `IKUAI_PASSWORD` | 登录密码 | `test123` |
+| modules | `IKUAI_MODULES` | 采集模块（逗号分隔） | `sysStat,lanDevice,interfaceInfo,dnat,session` |
+| insecure-skip | `IKUAI_INSECURE_SKIP` | 跳过 HTTPS 证书验证 | `true` |
+| timeout | `IKUAI_TIMEOUT` | 请求超时时间（秒） | `2` |
+| session-detail | `IKUAI_SESSION_DETAIL` | 是否导出会话明细指标 | `false` |
+| session-detail-limit | `IKUAI_SESSION_DETAIL_LIMIT` | 会话明细最大条数 | `200` |
 
 ### 采集模块
 
-| 模块 | 说明 |
-|:---|:---|
-| sysStat | 系统状态（CPU/内存/版本等） |
-| lanDevice | 内网终端 |
-| interfaceInfo | 接口流量 |
-| dnat | 端口映射规则与每条规则当前连接数 |
-| session | 当前连接会话总数（明细需显式开启） |
+| 模块 | 说明 | 是否默认开启 |
+|:---|:---|:---|
+| sysStat | 系统状态（CPU/内存/版本等） | 是 |
+| lanDevice | 内网终端 | 是 |
+| interfaceInfo | 接口流量 | 是 |
+| dnat | 端口映射规则与每条规则当前连接数 | 是 |
+| session | 当前连接会话总数 | 是（仅总数；明细需另开） |
+
+`dnat` 与 `session` 已包含在默认 `modules` 中，**无需额外开启**。Exporter 只读取爱快上已有的端口映射规则，不会在路由器上创建或启用 DNAT。
+
+如需关闭某个模块，可通过 `IKUAI_MODULES` 指定子集，例如：
+
+```yaml
+environment:
+    IKUAI_MODULES: "sysStat,lanDevice,interfaceInfo"
+```
+
+### 会话明细（可选）
+
+默认导出 `ikuai_session_total`（会话总数）和 `ikuai_dnat_connections`（每条 DNAT 规则的连接数）。如需每条连接的明细指标 `ikuai_session_info`，需显式开启（高基数，谨慎使用）：
+
+```yaml
+environment:
+    IKUAI_SESSION_DETAIL: "true"
+    IKUAI_SESSION_DETAIL_LIMIT: "200"
+```
 
 ### 端口映射 / 会话指标（iKuai 4.x）
 
@@ -92,9 +134,10 @@ Flags:
 | `ikuai_dnat_total` / `ikuai_dnat_enabled_total` / `ikuai_dnat_disabled_total` | 规则计数 |
 | `ikuai_dnat_connections` | 每条启用规则当前匹配连接数 |
 | `ikuai_session_total` | 当前会话总数 |
-| `ikuai_session_info` | 可选会话明细（`--session-detail`，高基数） |
+| `ikuai_session_info` | 可选会话明细（需 `IKUAI_SESSION_DETAIL=true`，高基数） |
+| `ikuai_exporter_metrics_collector_status{type="dnat"}` | DNAT 采集状态（`0` 成功，`1` 失败） |
 
-从 v0.2.1 开始，可以使用环境变量来设置上面的参数，格式为 `IKUAI_XXX`，如 `IKUAI_URL=http://10.0.1.253` 或 `IKUAI_USERNAME=test`。
+从 v0.2.1 开始，可以使用环境变量来设置上面的参数，格式为 `IKUAI_XXX`（flag 名中的 `-` 对应 `_`），如 `IKUAI_URL=http://10.0.1.253`、`IKUAI_USERNAME=test`、`IKUAI_SESSION_DETAIL=true`。
 
 下面的方式依然支持，但**将在以后版本中弃用**。
 
