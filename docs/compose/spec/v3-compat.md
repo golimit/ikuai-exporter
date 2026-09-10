@@ -12,7 +12,7 @@ commits: dd853ad..378f0eb
 
 **What was built** — 启动时自动识别 iKuai 3.x/4.x，并通过 `Source` 抽象统一采集。v3 使用 `Data/Result/ErrMsg` 信封与 `TYPE=data,total` 拉 DNAT；v4 保持原有 `collect_conn` 会话。匹配算法支持 `tcp+udp` 与端口区间。v3 无会话 API 时 `session` 模块标记 `collector_status=1` 并告警，DNAT 仍正常导出。
 
-**Verification** — `go build` / `go test ./pkg` 通过。live v3 `192.168.80.5`：version=3.7.15，`ikuai_dnat_info` 6 条，session status=1，其余模块 status=0。live v4 `192.168.31.254`：version=4.0.310，DNAT+session 回归通过（`ikuai_session_total=47`）。
+**Verification** — `go build` / `go test ./pkg` 通过。live v3 设备：version=3.7.15，`ikuai_dnat_info` 多条，session status=1，其余模块 status=0。live v4 设备：version=4.0.310，DNAT+session 回归通过。
 
 **Journey log** —
 - v3 成功信封为 `ErrMsg=Success`（`Result` 常为 30000，不是布尔成功码）
@@ -22,7 +22,7 @@ commits: dd853ad..378f0eb
 
 ## [S1] Problem
 
-当前 exporter 写死 `ikuai.NewV4`，只能连 iKuai 4.x。用户有 iKuai **3.7.15**（`http://192.168.80.5`）且已配置多条 DNAT，需要：
+当前 exporter 写死 `ikuai.NewV4`，只能连 iKuai 4.x。用户有 iKuai **3.7.15** 设备且已配置多条 DNAT，需要：
 
 1. 自动识别 3.x / 4.x
 2. 同一镜像/同一代码采集两代设备
@@ -91,8 +91,8 @@ type APIClient interface {
 ### 2.7 测试
 
 - 单测：v3/v4 信封解析、tcp+udp 协议匹配、端口区间匹配、版本解析
-- live：v3 `192.168.80.5` 出 `ikuai_dnat_info`（≥1 条）；session status=1
-- live：v4 `192.168.31.254` 回归 DNAT+session 仍可用
+- live：v3 设备出 `ikuai_dnat_info`（≥1 条）；session status=1
+- live：v4 设备回归 DNAT+session 仍可用
 
 ## [S3] Out of Scope
 

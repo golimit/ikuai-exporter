@@ -1,5 +1,5 @@
 services:
-    ikuai-exporter:
+    ikuai-exporter-01:
         build:
             context: .
             dockerfile: Dockerfile
@@ -7,5 +7,18 @@ services:
         restart: always
         env_file:
             - .env
+            - .env.instance-01
         ports:
             - "9401:9090"
+
+    ikuai-exporter-02:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: local
+        restart: always
+        env_file:
+            - .env
+            - .env.instance-02
+        ports:
+            - "9402:9090"

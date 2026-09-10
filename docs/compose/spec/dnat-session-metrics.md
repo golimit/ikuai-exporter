@@ -12,7 +12,7 @@ commits: 967ea61..55532ec
 
 **What was built** — 在现有 iKuai v4 exporter 上新增 `dnat` 与 `session` 两个采集模块。`dnat` 通过 `Action/call` 调用 `func_name=dnat` 导出端口映射清单与计数；`session` 调用 `collect_conn` 导出会话总数。Exporter 在同一次 scrape 内共享一次连接列表，按 post-DNAT（内网目标）与 pre-DNAT（公网源 + WAN 端口）双规则把会话归属到启用的 DNAT 规则，输出 `ikuai_dnat_connections`。公网 IP/源端口默认不进 label；`--session-detail` 可选开启明细并受 `--session-detail-limit`（默认 200）截断。不 fork SDK、不改既有指标名。
 
-**Verification** — `go build ./...` / `go test ./...` / `go vet ./...` 均通过。对 live `https://192.168.31.254` 抓取 `/metrics`：出现 `ikuai_dnat_info`（规则 newapi）、`ikuai_dnat_total/enabled_total`、`ikuai_dnat_connections`、`ikuai_session_total`，`collector_status{dnat,session}` 均为 0。首轮 code review 发现 RFC1918 `172.16/12` 字符串比较与 env 绑定问题，已修复并通过 focused re-review（APPROVE）。
+**Verification** — `go build ./...` / `go test ./...` / `go vet ./...` 均通过。对 live iKuai 4.x 设备抓取 `/metrics`：出现 `ikuai_dnat_info`、`ikuai_dnat_total/enabled_total`、`ikuai_dnat_connections`、`ikuai_session_total`，`collector_status{dnat,session}` 均为 0。首轮 code review 发现 RFC1918 `172.16/12` 字符串比较与 env 绑定问题，已修复并通过 focused re-review（APPROVE）。
 
 **Journey log** —
 - SDK 无 DNAT/Session show API；live 探测确认 `func_name=dnat` 与 `collect_conn`（TYPE=all）可用。
@@ -163,7 +163,7 @@ sysStat, lanDevice, interfaceInfo, dnat, session
 ### 2.8 测试边界
 
 - 单元测试：DNAT/session JSON 解析、匹配算法、enabled 判断、协议兼容、明细截断。
-- 集成验收：对 live 设备 `https://192.168.31.254` 抓 `/metrics`，至少看到 `ikuai_dnat_info` 与现有 DNAT 规则（tagname=`newapi`）。
+- 集成验收：对 live iKuai 4.x 设备抓 `/metrics`，至少看到 `ikuai_dnat_info` 与已有 DNAT 规则。
 
 ## [S3] Out of Scope
 

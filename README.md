@@ -68,32 +68,26 @@ services:
         image: ghcr.io/golimit/ikuai-exporter:latest
         restart: always
         environment:
-            IKUAI_URL: "http://192.168.31.254"
-            IKUAI_USERNAME: "exporter"
-            IKUAI_PASSWORD: "exporter123"
+            IKUAI_URL: "http://10.0.1.253"
+            IKUAI_USERNAME: "test"
+            IKUAI_PASSWORD: "test123"
         ports:
             - "9090:9090"
 ```
 
 ### 2. 本地源码构建
 
-项目根目录提供 `docker-compose.yaml` 与 `.env.example`：
+项目根目录提供 `docker-compose.yaml`，可一次部署多个实例（示例：`ikuai-exporter-01` → `:9401`，`ikuai-exporter-02` → `:9402`）：
 
 ```shell
 cp .env.example .env
-# 编辑 .env，填入爱快地址与登录凭据
+cp .env.example.instance-01 .env.instance-01
+cp .env.example.instance-02 .env.instance-02
+# 编辑 .env 填入共享凭据，按需修改各实例 URL
 docker compose up -d --build
 ```
 
-`docker-compose.yaml` 通过 `env_file: .env` 加载配置；`.env` 已在 `.gitignore`，请勿提交真实凭据。
-
-```dotenv
-IKUAI_URL=http://192.168.31.254
-IKUAI_USERNAME=exporter
-IKUAI_PASSWORD=exporter123
-IKUAI_SESSION_DETAIL=false
-IKUAI_SESSION_DETAIL_LIMIT=200
-```
+凭据放在 `.env`，各实例 URL 放在 `.env.instance-01` / `.env.instance-02`（均已加入 `.gitignore`）。可参考 `.env.example*`。
 
 修改代码后需加 `--build`，否则会复用旧镜像。
 
@@ -106,16 +100,16 @@ services:
     ikuai-exporter-01:
         image: ghcr.io/golimit/ikuai-exporter:latest
         environment:
-            IKUAI_URL: "http://192.168.31.254"   # 4.x
-            IKUAI_USERNAME: "exporter"
-            IKUAI_PASSWORD: "exporter123"
+            IKUAI_URL: "http://10.0.1.253"       # 4.x 示例
+            IKUAI_USERNAME: "test"
+            IKUAI_PASSWORD: "test123"
         ports: ["9090:9090"]
     ikuai-exporter-02:
         image: ghcr.io/golimit/ikuai-exporter:latest
         environment:
-            IKUAI_URL: "http://192.168.80.5"     # 3.x
-            IKUAI_USERNAME: "exporter"
-            IKUAI_PASSWORD: "exporter123"
+            IKUAI_URL: "http://10.0.2.253"       # 3.x 示例
+            IKUAI_USERNAME: "test"
+            IKUAI_PASSWORD: "test123"
         ports: ["9091:9090"]
 ```
 
@@ -250,7 +244,7 @@ environment:
 ```shell
 go test ./...
 go build -o ikuai-exporter .
-./ikuai-exporter server --url http://192.168.31.254 -u exporter -p exporter123
+./ikuai-exporter server --url http://10.0.1.253 -u test -p test123
 ```
 
 相关设计文档见 `docs/compose/spec/`（`dnat-session-metrics.md`、`v3-compat.md`）。
