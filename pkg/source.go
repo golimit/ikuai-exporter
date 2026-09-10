@@ -71,6 +71,9 @@ type Source interface {
 	Interfaces() ([]IfaceData, error)
 	DNAT() ([]DNATRule, error)
 	Sessions() ([]Session, error)
+	// CountDNATConnections returns per-rule connection counts.
+	// sessions is used by v4 (collect_conn); v3 ignores it and uses monitor_lanip.
+	CountDNATConnections(rules []DNATRule, sessions []Session) (map[int64]int, error)
 }
 
 // ParseMajor extracts the major version from a version string like "3.7.15" or "4.0.1".

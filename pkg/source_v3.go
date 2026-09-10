@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jakeslee/ikuai"
@@ -162,6 +163,101 @@ func (s *sourceV3) DNAT() ([]DNATRule, error) {
 
 func (s *sourceV3) Sessions() ([]Session, error) {
 	return nil, ErrSessionUnsupported
+}
+
+// lanConnItem is one connection row from v3 monitor_lanip TYPE=conn,conn_num.
+type lanConnItem struct {
+	Protocol string
+	SrcPort  string
+}
+
+func (s *sourceV3) CountDNATConnections(rules []DNATRule, _ []Session) (map[int64]int, error) {
+	connByIP := make(map[string][]lanConnItem)
+	for _, rule := range rules {
+		if !rule.Enabled || rule.LANAddr == "" {
+			continue
+		}
+		if _, ok := connByIP[rule.LANAddr]; ok {
+			continue
+		}
+		fetched, err := s.fetchLanConnections(rule.LANAddr)
+		if err != nil {
+			return nil, fmt.Errorf("monitor_lanip %s: %w", rule.LANAddr, err)
+		}
+		connByIP[rule.LANAddr] = fetched
+	}
+	return countV3DNATFromLanIP(rules, connByIP), nil
+}
+
+func countV3DNATFromLanIP(rules []DNATRule, connByIP map[string][]lanConnItem) map[int64]int {
+	counts := make(map[int64]int, len(rules))
+	for _, rule := range rules {
+		if !rule.Enabled {
+			continue
+		}
+		counts[rule.ID] = 0
+		if rule.LANAddr == "" {
+			continue
+		}
+		for _, c := range connByIP[rule.LANAddr] {
+			if protocolCompatible(rule.Protocol, c.Protocol) && portMatches(rule.LANPort, c.SrcPort) {
+				counts[rule.ID]++
+			}
+		}
+	}
+	return counts
+}
+
+func (s *sourceV3) fetchLanConnections(ip string) ([]lanConnItem, error) {
+	var raw map[string]interface{}
+	_, err := s.client.Run(&action3.Action{
+		Action:   "show",
+		FuncName: "monitor_lanip",
+		Param: map[string]interface{}{
+			"TYPE":      "conn,conn_num",
+			"ip":        ip,
+			"interface": "all",
+			"proto":     "all",
+			"maxnum":    500,
+			"limit":     "0,500",
+		},
+	}, &raw)
+	if err != nil {
+		return nil, err
+	}
+	return parseLanConnectionsFromMap(raw)
+}
+
+func parseLanConnectionsFromMap(raw map[string]interface{}) ([]lanConnItem, error) {
+	if raw == nil {
+		return nil, fmt.Errorf("empty monitor_lanip response")
+	}
+	if msg, _ := raw["ErrMsg"].(string); msg != "" && msg != "Success" {
+		return nil, fmt.Errorf("monitor_lanip error: %s", msg)
+	}
+
+	var payload map[string]interface{}
+	if d, ok := raw["Data"].(map[string]interface{}); ok {
+		payload = d
+	} else if r, ok := raw["results"].(map[string]interface{}); ok {
+		payload = r
+	} else {
+		return nil, fmt.Errorf("monitor_lanip missing data payload")
+	}
+
+	list, _ := payload["conn"].([]interface{})
+	out := make([]lanConnItem, 0, len(list))
+	for _, item := range list {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		out = append(out, lanConnItem{
+			Protocol: strings.ToLower(fmt.Sprint(m["protocol"])),
+			SrcPort:  anyToString(m["src_port"]),
+		})
+	}
+	return out, nil
 }
 
 func toFloat(v interface{}) float64 {

@@ -290,13 +290,21 @@ func (i *IKuaiExporter) CollectDNAT(metrics chan<- prometheus.Metric, cache *scr
 		return &CollectError{Err: err, Type: "dnat"}
 	}
 
-	sessions, sErr := i.loadSessions(cache)
-	if sErr != nil {
-		logrus.WithError(sErr).Warn("session data unavailable while collecting dnat")
-		sessions = nil
+	var sessions []Session
+	if i.source.Major() >= 4 {
+		loaded, sErr := i.loadSessions(cache)
+		if sErr != nil {
+			logrus.WithError(sErr).Warn("session data unavailable while collecting dnat")
+		} else {
+			sessions = loaded
+		}
 	}
 
-	counts := CountDNATConnections(rules, sessions)
+	counts, countErr := i.source.CountDNATConnections(rules, sessions)
+	if countErr != nil {
+		logrus.WithError(countErr).Warn("failed to count dnat connections")
+		counts = CountDNATConnections(rules, nil)
+	}
 	enabled := 0
 	for _, rule := range rules {
 		state := "no"

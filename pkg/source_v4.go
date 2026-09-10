@@ -180,6 +180,17 @@ func (s *sourceV4) Sessions() ([]Session, error) {
 	return ParseSessions(result.Results.Conn), nil
 }
 
+func (s *sourceV4) CountDNATConnections(rules []DNATRule, sessions []Session) (map[int64]int, error) {
+	if sessions == nil {
+		fetched, err := s.Sessions()
+		if err != nil {
+			return CountDNATConnections(rules, nil), nil
+		}
+		sessions = fetched
+	}
+	return CountDNATConnections(rules, sessions), nil
+}
+
 func parseFloatString(s string) float64 {
 	f, err := parseFloat(s)
 	if err != nil {

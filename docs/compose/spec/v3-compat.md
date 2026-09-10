@@ -49,6 +49,7 @@ commits: dd853ad..378f0eb
 | 数据 | `Data.data[]`，`Data.total` | `results.data[]`，`results.total` |
 | DNAT TYPE | 仅 `data,total`（`enabled_total` 会报 unknown TYPE） | `data,total,enabled_total,disabled_total` |
 | Session | **无** `collect_conn`（Not found funcname） | `collect_conn` TYPE=all |
+| DNAT 连接数 | `monitor_lanip` TYPE=conn,conn_num（按 `lan_addr` 查，`src_port` 匹配 `lan_port`） | `collect_conn` 会话匹配 |
 | DNAT.interface | 接口名 `wan1` / `all` | 多为 WAN IP 或 `wan1,wan2,...` |
 | DNAT.protocol | 可为 `tcp+udp` | 多为 `tcp`/`udp`/`any` |
 | DNAT.port | 可为区间 `32080-32443` | 多为单端口字符串 |
@@ -80,7 +81,7 @@ type APIClient interface {
 - `ikuai_exporter_metrics_collector_status{type="session"}` = 1
 - 不输出 `ikuai_session_total`（或输出 0 并由 status 标明不可用）
 - 日志：`session API not available on iKuai 3.x`
-- DNAT 仍输出，`ikuai_dnat_connections` 在无 session 时全为 0
+- DNAT 仍输出；`ikuai_dnat_connections` 经 `monitor_lanip` 按内网主机端口统计（不依赖 `collect_conn`）
 
 ### 2.6 启动与配置
 

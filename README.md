@@ -48,11 +48,23 @@ iKuai 设备
 | LAN 设备 | 是 | 是 |
 | 连接数（host/iface/device） | 是 | 是 |
 | DNAT 端口映射清单 | 是 | 是 |
-| 每条 DNAT 当前连接数 | 是（无会话数据时为 0） | 是 |
+| 每条 DNAT 当前连接数 | 是（经 `monitor_lanip` 按内网端口统计） | 是（经 `collect_conn` 会话匹配） |
 | 当前会话总数 / 明细 | 否（优雅降级） | 是 |
-| Grafana 共用 Dashboard | 是 | 是 |
+| Grafana 共用 Dashboard | 是（[v13 Dashboard](examples/grafana-dashboard.json)） | 是 |
 
 > 3.x 端口映射支持 `tcp+udp`、端口区间（如 `32080-32443`）；`interface` 为接口名（可能是 `all`）。4.x 的 `interface` 多为 WAN IP 或 `wan1,wan2,...`。
+
+## 最近更新
+
+| 变更 | 说明 |
+|:---|:---|
+| **Grafana v13 Dashboard** | 新增完整 [examples/grafana-dashboard.json](examples/grafana-dashboard.json)（Dynamic Dashboard v2 schema，24 面板），覆盖健康、系统、网络、DNAT、会话 |
+| **3.x DNAT 连接数** | 经 `monitor_lanip` 按内网主机 `lan_addr` + `src_port` 匹配 `lan_port` 统计，不再恒为 0 |
+| **公网接口面板** | WAN 流量/连接数通过 `ikuai_iface_info.parent_interface!=""` 筛选，v3/v4 通用，不依赖接口 `ikuai_uptime` |
+| **健康面板** | 版本（`ikuai_version`）、设备在线（`ikuai_up`）、各模块采集状态（`ikuai_exporter_metrics_collector_status`） |
+| **速率单位** | 实时速率面板使用 `KiBs`，与 `*_kbytes_per_second` 指标一致 |
+
+> Dashboard 以 `examples/grafana-dashboard.json` 为准；下文 Grafana 章节为其摘要。
 
 ## 部署
 
@@ -209,7 +221,16 @@ environment:
 | `ikuai_session_total` | 当前会话总数（仅 4.x） |
 | `ikuai_session_info` | 可选会话明细（需 `IKUAI_SESSION_DETAIL=true`，高基数） |
 
-#### DNAT 会话关联规则
+#### DNAT 连接数统计方式
+
+| 版本 | 数据来源 | 匹配规则 |
+|:---|:---|:---|
+| **3.x** | `monitor_lanip`（按 `lan_addr` 查询内网主机连接） | `src_port` 命中 `lan_port`（支持端口区间），协议兼容 |
+| **4.x** | `collect_conn` 全量会话表 | 见下方关联规则 |
+
+> 3.x 统计的是内网主机上该服务端口的连接数（与 iKuai UI「当前连接」语义接近）；若同一端口也被内网直连访问，会一并计入。
+
+#### DNAT 会话关联规则（4.x）
 
 对每条启用的 DNAT，按下列优先级归属会话（每条会话只计一次）：
 
@@ -231,13 +252,36 @@ environment:
 
 ## Grafana
 
-- 上游演示 Dashboard：[examples/grafana-dashboard.json](https://github.com/jakeslee/ikuai-exporter/raw/refs/heads/master/examples/grafana-dashboard.json)
-- 基础区（CPU/内存/流量/连接数）可直接复用。
-- 端口映射区建议查询：
-  - 规则表：`ikuai_dnat_info`
-  - 每条规则连接数：`ikuai_dnat_connections`
-  - 会话总数：`ikuai_session_total`
-- 本 fork 的 DNAT/Session 面板 JSON **尚未合入** 示例 Dashboard，需自行添加或使用 `examples/grafana-dashboard.json` 作底板扩展。
+**权威配置**：[examples/grafana-dashboard.json](examples/grafana-dashboard.json)（`爱快网关监控 - Enhanced Overview v3+v4 Fixed`）
+
+| 项 | 值 |
+|:---|:---|
+| 格式 | Grafana **v13+** Dynamic Dashboard（v2 schema，`elements` + `GridLayout`） |
+| 面板数 | 24 |
+| 要求 | Grafana ≥ 13.0，Prometheus 数据源 |
+| 导入 | Dashboard → New → Import → Upload JSON file |
+
+### 面板布局
+
+| 区域 | 面板 | 主要指标 / 查询要点 |
+|:---|:---|:---|
+| 健康 | iKuai 版本 / 在线状态 / 采集器状态 | `ikuai_version`、`ikuai_up`、`ikuai_exporter_metrics_collector_status` |
+| 系统 | CPU / 内存 / Uptime / 温度 / 连接数 / 在线终端 | 顶部 Stat 行 |
+| 网络 · 主机 | Host Network IO/s | `ikuai_network_*_kbytes_per_second{id="host"}`，单位 KiBs |
+| 网络 · 公网 | 公网接口 Network IO/s、公网接口统计 | `ikuai_iface_info{parent_interface!=""}` 筛选 WAN；不依赖 `ikuai_uptime` |
+| 网络 · 全部接口 | Interface Network IO/s | 全部 `iface/*` 接口 |
+| 网络 · 终端 | 在线终端表、Device IO/s、流量统计 | `ikuai_device_info` join；终端表含 IP 版本与连接数 |
+| DNAT | 规则数 / 启用 / 禁用 / 映射连接 | `ikuai_dnat_*` 系列 |
+| DNAT · 明细 | 端口映射规则、端口映射当前连接 | `ikuai_dnat_info` 表（enabled 中文化）、`ikuai_dnat_connections` |
+| 会话 | 当前会话 / 会话明细（可选） | `ikuai_session_total`（**仅 4.x**）；明细需 `IKUAI_SESSION_DETAIL=true` |
+
+### 变量
+
+- `$instance`：`label_values(ikuai_version, instance)`，多 exporter 部署时切换设备。
+
+### 与上游 Dashboard 差异
+
+上游 [jakeslee/ikuai-exporter](https://github.com/jakeslee/ikuai-exporter) 为 Grafana 9 旧 schema（`panels` + `schemaVersion`），无 DNAT/Session/健康面板，公网接口依赖 `ikuai_uptime > 0`。本 fork Dashboard 已迁移 v13 v2 并针对 3.x/4.x 统一布局。
 
 ## 开发
 

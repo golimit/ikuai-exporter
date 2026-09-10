@@ -1,1 +1,3282 @@
-{"annotations": {"list": [{"builtIn": 1,"datasource": {"type": "grafana","uid": "-- Grafana --"},"enable": true,"hide": true,"iconColor": "rgba(0, 211, 255, 1)","name": "Annotations & Alerts","target": {"limit": 100,"matchAny": false,"tags": [],"type": "dashboard"},"type": "dashboard"}]},"description": "","editable": true,"fiscalYearStartMonth": 0,"graphTooltip": 1,"id": 1,"links": [],"liveNow": false,"panels": [{"datasource": {"type": "prometheus","uid": "dp-AfZzIz"},"fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"decimals": 0,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "percentunit"},"overrides": []},"gridPos": {"h": 5,"w": 3,"x": 0,"y": 0},"id": 2,"options": {"colorMode": "value","graphMode": "area","justifyMode": "auto","orientation": "auto","reduceOptions": {"calcs": ["lastNotNull"],"fields": "","values": false},"textMode": "auto"},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "avg(ikuai_cpu_usage_ratio{instance=\"$instance\"})","legendFormat": "__auto","range": true,"refId": "A"}],"title": "CPU Usage","type": "stat"},{"datasource": {"type": "prometheus","uid": "dp-AfZzIz"},"fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"decimals": 0,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "percentunit"},"overrides": []},"gridPos": {"h": 5,"w": 3,"x": 3,"y": 0},"id": 4,"options": {"colorMode": "value","graphMode": "area","justifyMode": "auto","orientation": "auto","reduceOptions": {"calcs": ["lastNotNull"],"fields": "","values": false},"textMode": "auto"},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "ikuai_memory_usage_bytes{instance=\"$instance\"}/ikuai_memory_size_bytes{instance=\"$instance\"}","instant": false,"legendFormat": "__auto","range": true,"refId": "A"}],"title": "Memory Usage","transformations": [],"type": "stat"},{"datasource": {"type": "prometheus","uid": "dp-AfZzIz"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null}]},"unit": "dtdhms"},"overrides": []},"gridPos": {"h": 5,"w": 2,"x": 6,"y": 0},"id": 6,"options": {"colorMode": "value","graphMode": "area","justifyMode": "auto","orientation": "auto","reduceOptions": {"calcs": ["lastNotNull"],"fields": "","values": false},"textMode": "auto"},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_uptime{id=\"host\", instance=\"$instance\"}","legendFormat": "__auto","range": true,"refId": "A"}],"title": "Uptime","type": "stat"},{"datasource": {"type": "prometheus"},"fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "celsius"},"overrides": []},"gridPos": {"h": 5,"w": 2,"x": 8,"y": 0},"id": 8,"options": {"colorMode": "value","graphMode": "area","justifyMode": "auto","orientation": "auto","reduceOptions": {"calcs": ["lastNotNull"],"fields": "","values": false},"textMode": "auto"},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_cpu_temperature{instance=\"$instance\"}\n","legendFormat": "__auto","range": true,"refId": "A"}],"title": "Temperature","type": "stat"},{"datasource": {"type": "prometheus"},"fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]}},"overrides": []},"gridPos": {"h": 5,"w": 2,"x": 10,"y": 0},"id": 14,"options": {"colorMode": "value","graphMode": "area","justifyMode": "auto","orientation": "auto","reduceOptions": {"calcs": ["lastNotNull"],"fields": "","values": false},"textMode": "auto"},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_conn_count{id=\"host\", instance=\"$instance\"}","legendFormat": "__auto","range": true,"refId": "A"}],"title": "Connection","type": "stat"},{"datasource": {"type": "prometheus"},"fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"custom": {"align": "auto","cellOptions": {"type": "auto"},"inspect": false,"minWidth": 50},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "bytes"},"overrides": [{"matcher": {"id": "byName","options": "上传"},"properties": [{"id": "custom.width","value": 98}]},{"matcher": {"id": "byName","options": "IP"},"properties": [{"id": "custom.width","value": 104}]},{"matcher": {"id": "byName","options": "下载"},"properties": [{"id": "custom.width","value": 112}]}]},"gridPos": {"h": 5,"w": 6,"x": 12,"y": 0},"id": 17,"options": {"footer": {"countRows": false,"fields": "","reducer": ["sum"],"show": false},"frameIndex": 0,"showHeader": true,"sortBy": []},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "sort_desc(increase(ikuai_network_send_bytes{id=~\"device/.*\", instance=\"$instance\"}[$__range]) * on(id, instance) group_left(comment, ip_addr) ikuai_device_info)","format": "table","instant": true,"legendFormat": "__auto","range": false,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "increase(ikuai_network_recv_bytes{id=~\"device/.*\", instance=\"$instance\"}[$__range])","format": "table","hide": false,"instant": true,"legendFormat": "__auto","range": false,"refId": "B"}],"title": "流量统计","transformations": [{"id": "merge","options": {}},{"id": "organize","options": {"excludeByName": {"Time": true,"id": true,"instance": true,"job": true},"indexByName": {"Time": 0,"Value #A": 6,"Value #B": 7,"comment": 2,"id": 3,"instance": 4,"ip_addr": 1,"job": 5},"renameByName": {"Time": "","Value #A": "上传","Value #B": "下载","comment": "备注","id": "","instance": "","ip_addr": "IP"}}}],"type": "table"},{"datasource": {"type": "prometheus"},"fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"custom": {"align": "auto","cellOptions": {"type": "auto"},"inspect": false,"minWidth": 50},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "bytes"},"overrides": []},"gridPos": {"h": 5,"w": 6,"x": 18,"y": 0},"id": 18,"options": {"footer": {"countRows": false,"fields": "","reducer": ["sum"],"show": false},"showHeader": true},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "sort_desc((increase(ikuai_network_send_bytes{id=~\"iface/.*\", instance=\"$instance\"}[$__range]) and on(id) ikuai_uptime > 0) * on (id) group_left(interface, comment) ikuai_iface_info)","format": "table","instant": true,"legendFormat": "__auto","range": false,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "(increase(ikuai_network_recv_bytes{id=~\"iface/.*\", instance=\"$instance\"}[$__range]) and on(id) ikuai_uptime > 0)","format": "table","hide": false,"instant": true,"legendFormat": "__auto","range": false,"refId": "B"}],"title": "公网流量统计","transformations": [{"id": "merge","options": {}},{"id": "organize","options": {"excludeByName": {"Time": true,"id": true,"instance": true,"job": true},"indexByName": {"Time": 0,"Value #A": 6,"Value #B": 7,"comment": 2,"id": 3,"instance": 4,"interface": 1,"job": 5},"renameByName": {"Time": "","Value #A": "上传","Value #B": "下载","comment": "备注","id": "","instance": "","ip_addr": "IP"}}}],"type": "table"},{"datasource": {"type": "prometheus","uid": "dp-AfZzIz"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "thresholds"},"custom": {"align": "auto","cellOptions": {"type": "auto"},"inspect": false,"minWidth": 50},"decimals": 2,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null}]},"unit": "Bps"},"overrides": [{"matcher": {"id": "byName","options": "upload"},"properties": [{"id": "custom.cellOptions","value": {"type": "color-text"}}]},{"matcher": {"id": "byName","options": "download"},"properties": [{"id": "custom.cellOptions","value": {"type": "color-text"}}]},{"matcher": {"id": "byName","options": "connection"},"properties": [{"id": "unit","value": "none"},{"id": "decimals"}]},{"matcher": {"id": "byName","options": "mac"},"properties": [{"id": "custom.width"}]}]},"gridPos": {"h": 11,"w": 12,"x": 0,"y": 5},"id": 12,"options": {"footer": {"countRows": false,"fields": "","reducer": ["sum"],"show": false},"showHeader": true,"sortBy": [{"desc": true,"displayName": "upload"}]},"pluginVersion": "9.4.13","targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "sort_desc(ikuai_network_send_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"}* on (id, instance) group_left(ip_addr, hostname, comment, mac) ikuai_device_info)","format": "table","instant": true,"legendFormat": "__auto","range": false,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "ikuai_network_recv_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id) group_left(ip_addr, hostname, comment, mac) ikuai_device_info","format": "table","hide": false,"instant": true,"legendFormat": "__auto","range": false,"refId": "B"},{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "ikuai_network_conn_count{id=~\"device/.*\", instance=\"$instance\"} * on (id) group_left ikuai_device_info","format": "table","hide": false,"instant": true,"legendFormat": "__auto","range": false,"refId": "C"}],"title": "Devices","transformations": [{"id": "merge","options": {}},{"id": "organize","options": {"excludeByName": {"Time": true,"id": true,"instance": true,"job": true},"indexByName": {"Time": 0,"Value #A": 9,"Value #B": 10,"Value #C": 8,"comment": 4,"hostname": 3,"id": 1,"instance": 5,"ip_addr": 2,"job": 7,"mac": 6},"renameByName": {"Value #A": "upload","Value #B": "download","Value #C": "connection","hostname": "","id": "","instance": "","ip_addr": "ip","job": ""}}}],"type": "table"},{"datasource": {"type": "prometheus"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},"custom": {"axisCenteredZero": false,"axisColorMode": "text","axisLabel": "","axisPlacement": "auto","barAlignment": 0,"drawStyle": "line","fillOpacity": 0,"gradientMode": "none","hideFrom": {"legend": false,"tooltip": false,"viz": false},"lineInterpolation": "linear","lineWidth": 1,"pointSize": 5,"scaleDistribution": {"type": "linear"},"showPoints": "never","spanNulls": false,"stacking": {"group": "A","mode": "none"},"thresholdsStyle": {"mode": "off"}},"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "Bps"},"overrides": [{"matcher": {"id": "byName","options": "netin"},"properties": [{"id": "custom.transform","value": "negative-Y"}]}]},"gridPos": {"h": 5,"w": 12,"x": 12,"y": 5},"id": 10,"options": {"legend": {"calcs": ["max", "mean", "last"],"displayMode": "table","placement": "right","showLegend": true},"tooltip": {"mode": "single","sort": "none"}},"targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_send_kbytes_per_second{id=\"host\", instance=\"$instance\"}","legendFormat": "netout","range": true,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_recv_kbytes_per_second{id=\"host\", instance=\"$instance\"}","hide": false,"legendFormat": "netin","range": true,"refId": "B"}],"title": "Host Network IO/s","type": "timeseries"},{"datasource": {"type": "prometheus"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},"custom": {"axisCenteredZero": false,"axisColorMode": "text","axisLabel": "","axisPlacement": "left","barAlignment": 0,"drawStyle": "line","fillOpacity": 0,"gradientMode": "none","hideFrom": {"legend": false,"tooltip": false,"viz": false},"lineInterpolation": "linear","lineStyle": {"fill": "solid"},"lineWidth": 1,"pointSize": 5,"scaleDistribution": {"type": "linear"},"showPoints": "never","spanNulls": false,"stacking": {"group": "A","mode": "none"},"thresholdsStyle": {"mode": "off"}},"decimals": 2,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "Bps"},"overrides": [{"matcher": {"id": "byRegexp","options": ".*netin"},"properties": [{"id": "custom.transform","value": "negative-Y"}]}]},"gridPos": {"h": 6,"w": 12,"x": 12,"y": 10},"id": 15,"options": {"legend": {"calcs": ["max", "last"],"displayMode": "table","placement": "right","showLegend": true},"tooltip": {"mode": "multi","sort": "none"}},"targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","exemplar": false,"expr": "(ikuai_network_send_kbytes_per_second{id=~\"iface/.*\"} and on(id) ikuai_uptime > 0) * on (id) group_left(interface, comment) ikuai_iface_info","instant": false,"legendFormat": "{{comment}}-netout","range": true,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "(ikuai_network_recv_kbytes_per_second{id=~\"iface/.*\"} and on(id) ikuai_uptime > 0) * on (id) group_left(interface, comment) ikuai_iface_info","hide": false,"legendFormat": "{{comment}}-netin","range": true,"refId": "B"}],"type": "timeseries"},{"datasource": {"type": "prometheus"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},"custom": {"axisCenteredZero": false,"axisColorMode": "text","axisLabel": "","axisPlacement": "left","barAlignment": 0,"drawStyle": "line","fillOpacity": 0,"gradientMode": "none","hideFrom": {"legend": false,"tooltip": false,"viz": false},"lineInterpolation": "linear","lineStyle": {"fill": "solid"},"lineWidth": 1,"pointSize": 5,"scaleDistribution": {"type": "linear"},"showPoints": "never","spanNulls": true,"stacking": {"group": "A","mode": "none"},"thresholdsStyle": {"mode": "off"}},"decimals": 2,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null}]},"unit": "Bps"},"overrides": [{"matcher": {"id": "byRegexp","options": ".*recv"},"properties": [{"id": "custom.transform","value": "negative-Y"}]}]},"gridPos": {"h": 8,"w": 13,"x": 0,"y": 16},"id": 13,"options": {"legend": {"calcs": ["max", "lastNotNull"],"displayMode": "table","placement": "right","showLegend": true,"sortBy": "Last *","sortDesc": true},"tooltip": {"mode": "single","sort": "desc"}},"targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_send_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id) group_left(ip_addr, comment) ikuai_device_info","legendFormat": "{{ip_addr}}-{{comment}}-send","range": true,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_recv_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id) group_left(ip_addr, comment) ikuai_device_info","hide": false,"legendFormat": "{{ip_addr}}-{{comment}}-recv","range": true,"refId": "B"}],"title": "Device Network IO/s","type": "timeseries"},{"datasource": {"type": "prometheus"},"description": "","fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},"custom": {"axisCenteredZero": false,"axisColorMode": "text","axisLabel": "","axisPlacement": "left","barAlignment": 0,"drawStyle": "line","fillOpacity": 0,"gradientMode": "none","hideFrom": {"legend": false,"tooltip": false,"viz": false},"lineInterpolation": "linear","lineStyle": {"fill": "solid"},"lineWidth": 1,"pointSize": 5,"scaleDistribution": {"type": "linear"},"showPoints": "never","spanNulls": false,"stacking": {"group": "A","mode": "none"},"thresholdsStyle": {"mode": "off"}},"decimals": 2,"mappings": [],"thresholds": {"mode": "absolute","steps": [{"color": "green","value": null},{"color": "red","value": 80}]},"unit": "Bps"},"overrides": [{"matcher": {"id": "byRegexp","options": ".*recv"},"properties": [{"id": "custom.transform","value": "negative-Y"}]}]},"gridPos": {"h": 8,"w": 11,"x": 13,"y": 16},"id": 11,"options": {"legend": {"calcs": ["max", "mean", "last"],"displayMode": "table","placement": "right","showLegend": true},"tooltip": {"mode": "multi","sort": "none"}},"targets": [{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_send_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on (id) group_left(interface, comment) ikuai_iface_info","legendFormat": "{{interface}}-{{comment}}-send","range": true,"refId": "A"},{"datasource": {"type": "prometheus"},"editorMode": "code","expr": "ikuai_network_recv_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on (id) group_left(interface, comment) ikuai_iface_info","hide": false,"legendFormat": "{{interface}}-{{comment}}-recv","range": true,"refId": "B"}],"title": "Interface Network IO/s","type": "timeseries"}],"refresh": "5s","revision": 1,"schemaVersion": 38,"style": "dark","tags": [],"templating": {"list": [{"current": {"selected": false,"text": "10.0.1.253","value": "10.0.1.253"},"datasource": {"type": "prometheus","uid": "dp-AfZzIz"},"definition": "label_values(ikuai_version, instance)","hide": 0,"includeAll": false,"multi": false,"name": "instance","options": [],"query": {"query": "label_values(ikuai_version, instance)","refId": "StandardVariableQuery"},"refresh": 1,"regex": "","skipUrlSync": false,"sort": 0,"type": "query"}]},"time": {"from": "now-6h","to": "now"},"timepicker": {},"timezone": "","title": "爱快网关监控","uid": "IhtQfGZ4k","version": 4,"weekStart": ""}
+{
+  "annotations": [
+    {
+      "kind": "AnnotationQuery",
+      "spec": {
+        "builtIn": true,
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "query": {
+          "datasource": {
+            "name": "-- Grafana --"
+          },
+          "group": "grafana",
+          "kind": "DataQuery",
+          "spec": {
+            "limit": 100,
+            "matchAny": false,
+            "tags": [],
+            "type": "dashboard"
+          },
+          "version": "v0"
+        }
+      }
+    }
+  ],
+  "cursorSync": "Crosshair",
+  "description": "iKuai 3.x/4.x 网关监控。需 Prometheus 抓取 ikuai-exporter；Grafana v13+ Dynamic Dashboard (v2 schema)。",
+  "editable": true,
+  "elements": {
+    "panel-10": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_send_kbytes_per_second{id=\"host\", instance=\"$instance\"}",
+                      "legendFormat": "netout",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_recv_kbytes_per_second{id=\"host\", instance=\"$instance\"}",
+                      "legendFormat": "netin",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 10,
+        "links": [],
+        "title": "Host Network IO/s",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "never",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "KiBs"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "netin"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.transform",
+                      "value": "negative-Y"
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "annotations": {
+                "clustering": -1,
+                "multiLane": false
+              },
+              "legend": {
+                "calcs": [
+                  "max",
+                  "mean",
+                  "last"
+                ],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "single",
+                "sort": "none"
+              }
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-11": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_send_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on (id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\"}",
+                      "legendFormat": "{{interface}}-{{comment}}-send",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_recv_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on (id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\"}",
+                      "legendFormat": "{{interface}}-{{comment}}-recv",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 11,
+        "links": [],
+        "title": "Interface Network IO/s",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "left",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineStyle": {
+                    "fill": "solid"
+                  },
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "never",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "decimals": 2,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "KiBs"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byRegexp",
+                    "options": ".*recv"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.transform",
+                      "value": "negative-Y"
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "annotations": {
+                "clustering": -1,
+                "multiLane": false
+              },
+              "legend": {
+                "calcs": [
+                  "max",
+                  "mean",
+                  "last"
+                ],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "multi",
+                "sort": "none"
+              }
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-12": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "sort_desc(ikuai_network_send_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id, instance) group_left(ip_addr, hostname, comment, mac, ip_version) ikuai_device_info{instance=\"$instance\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_network_recv_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id, instance) group_left(ip_addr, hostname, comment, mac, ip_version) ikuai_device_info{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_network_conn_count{id=~\"device/.*\", instance=\"$instance\"} * on (id, instance) group_left ikuai_device_info{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "C"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "merge",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {}
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "id": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 0,
+                      "Value #A": 6,
+                      "Value #B": 7,
+                      "Value #C": 8,
+                      "comment": 4,
+                      "hostname": 3,
+                      "id": 9,
+                      "instance": 10,
+                      "ip_addr": 1,
+                      "ip_version": 2,
+                      "job": 11,
+                      "mac": 5
+                    },
+                    "renameByName": {
+                      "Value #A": "上传",
+                      "Value #B": "下载",
+                      "Value #C": "连接数",
+                      "comment": "备注",
+                      "hostname": "主机名",
+                      "id": "",
+                      "instance": "",
+                      "ip_addr": "IP",
+                      "ip_version": "IP版本",
+                      "job": "",
+                      "mac": "MAC"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 12,
+        "links": [],
+        "title": "在线终端",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "decimals": 2,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "KiBs"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "上传"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "color-text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "下载"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "color-text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "连接数"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "none"
+                    },
+                    {
+                      "id": "decimals"
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "mac"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width"
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "连接数"
+                }
+              ]
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-13": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_send_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id, instance) group_left(ip_addr, comment) ikuai_device_info{instance=\"$instance\"}",
+                      "legendFormat": "{{ip_addr}}-{{comment}}-send",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_recv_kbytes_per_second{id=~\"device/.*\", instance=\"$instance\"} * on (id, instance) group_left(ip_addr, comment) ikuai_device_info{instance=\"$instance\"}",
+                      "legendFormat": "{{ip_addr}}-{{comment}}-recv",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 13,
+        "links": [],
+        "title": "Device Network IO/s",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "left",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineStyle": {
+                    "fill": "solid"
+                  },
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "never",
+                  "showValues": false,
+                  "spanNulls": true,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "decimals": 2,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "KiBs"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byRegexp",
+                    "options": ".*recv"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.transform",
+                      "value": "negative-Y"
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "annotations": {
+                "clustering": -1,
+                "multiLane": false
+              },
+              "legend": {
+                "calcs": [
+                  "max",
+                  "lastNotNull"
+                ],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "single",
+                "sort": "desc"
+              }
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-14": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_conn_count{id=\"host\", instance=\"$instance\"}",
+                      "legendFormat": "__auto",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 14,
+        "links": [],
+        "title": "Connection",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-15": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_network_send_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on(id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\", parent_interface!=\"\"}",
+                      "instant": false,
+                      "legendFormat": "{{comment}}-netout",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_network_recv_kbytes_per_second{id=~\"iface/.*\", instance=\"$instance\"} * on(id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\", parent_interface!=\"\"}",
+                      "legendFormat": "{{comment}}-netin",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "公网/WAN 接口实时上下行。v3/v4 通用：不依赖接口 ikuai_uptime；通过 parent_interface 非空筛选 WAN 接口。",
+        "id": 15,
+        "links": [],
+        "title": "公网接口 Network IO/s",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "left",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineStyle": {
+                    "fill": "solid"
+                  },
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "never",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "decimals": 2,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "KiBs"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byRegexp",
+                    "options": ".*netin"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.transform",
+                      "value": "negative-Y"
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "annotations": {
+                "clustering": -1,
+                "multiLane": false
+              },
+              "legend": {
+                "calcs": [
+                  "max",
+                  "last"
+                ],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "multi",
+                "sort": "none"
+              }
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-17": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "sort_desc(increase(ikuai_network_send_bytes{id=~\"device/.*\", instance=\"$instance\"}[$__range]) * on(id, instance) group_left(comment, ip_addr) ikuai_device_info{instance=\"$instance\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "increase(ikuai_network_recv_bytes{id=~\"device/.*\", instance=\"$instance\"}[$__range]) * on(id, instance) group_left(comment, ip_addr) ikuai_device_info{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "merge",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {}
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "id": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 0,
+                      "Value #A": 6,
+                      "Value #B": 7,
+                      "comment": 2,
+                      "id": 3,
+                      "instance": 4,
+                      "ip_addr": 1,
+                      "job": 5
+                    },
+                    "renameByName": {
+                      "Time": "",
+                      "Value #A": "上传",
+                      "Value #B": "下载",
+                      "comment": "备注",
+                      "id": "",
+                      "instance": "",
+                      "ip_addr": "IP"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 17,
+        "links": [],
+        "title": "流量统计",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "bytes"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "上传"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 98
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "IP"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 214
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "下载"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 112
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "备注"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 403
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "frameIndex": 0,
+              "showHeader": true,
+              "sortBy": []
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-18": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "sort_desc(increase(ikuai_network_send_bytes{id=~\"iface/.*\", instance=\"$instance\"}[$__range]) * on(id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\", parent_interface!=\"\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "increase(ikuai_network_recv_bytes{id=~\"iface/.*\", instance=\"$instance\"}[$__range]) * on(id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\", parent_interface!=\"\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_network_conn_count{id=~\"iface/.*\", instance=\"$instance\"} * on(id, instance) group_left(interface, comment) ikuai_iface_info{instance=\"$instance\", parent_interface!=\"\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "C"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "merge",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {}
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "id": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 0,
+                      "Value #A": 3,
+                      "Value #B": 4,
+                      "Value #C": 5,
+                      "comment": 2,
+                      "id": 6,
+                      "instance": 7,
+                      "interface": 1,
+                      "job": 8
+                    },
+                    "renameByName": {
+                      "Time": "",
+                      "Value #A": "上传",
+                      "Value #B": "下载",
+                      "Value #C": "连接数",
+                      "comment": "备注",
+                      "id": "",
+                      "instance": "",
+                      "interface": "接口",
+                      "job": ""
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "公网/WAN 接口所选时间范围流量与当前连接数。v3/v4 通用：不依赖接口 ikuai_uptime。",
+        "id": 18,
+        "links": [],
+        "title": "公网接口统计",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "bytes"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "连接数"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "none"
+                    },
+                    {
+                      "id": "decimals",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-19": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_dnat_total{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "端口映射规则总数。该指标由 dnat 模块提供。",
+        "id": 19,
+        "links": [],
+        "title": "DNAT 规则",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-2": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "avg(ikuai_cpu_usage_ratio{instance=\"$instance\"})",
+                      "legendFormat": "__auto",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 2,
+        "links": [],
+        "title": "CPU Usage",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                },
+                "unit": "percentunit"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-20": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_dnat_enabled_total{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "当前启用的 DNAT/端口映射规则数。",
+        "id": 20,
+        "links": [],
+        "title": "启用映射",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-21": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_dnat_disabled_total{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "当前禁用的 DNAT/端口映射规则数。",
+        "id": 21,
+        "links": [],
+        "title": "禁用映射",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-22": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "sum(ikuai_dnat_connections{instance=\"$instance\"})",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "当前归属到 DNAT 规则的连接总数。",
+        "id": 22,
+        "links": [],
+        "title": "映射连接",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-23": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_session_total{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "iKuai 当前连接会话总数（session 模块，仅 4.x）。3.x 设备无此指标，面板将显示 No data，属正常现象。",
+        "id": 23,
+        "links": [],
+        "title": "当前会话",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-24": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_device_count{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "当前在线终端数量。",
+        "id": 24,
+        "links": [],
+        "title": "在线终端",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-25": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_dnat_info{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "Value": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 9,
+                      "Value": 10,
+                      "comment": 1,
+                      "enabled": 7,
+                      "id": 8,
+                      "instance": 11,
+                      "interface": 3,
+                      "job": 12,
+                      "lan_addr": 5,
+                      "lan_port": 6,
+                      "protocol": 2,
+                      "tagname": 0,
+                      "wan_port": 4
+                    },
+                    "renameByName": {
+                      "Value": "",
+                      "comment": "备注",
+                      "enabled": "状态",
+                      "id": "ID",
+                      "interface": "WAN地址/接口",
+                      "lan_addr": "内网IP",
+                      "lan_port": "内网端口",
+                      "protocol": "协议",
+                      "tagname": "名称",
+                      "wan_port": "公网端口"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "显示当前 DNAT/端口映射配置。interface 字段由 exporter 原样导出。",
+        "id": 25,
+        "links": [],
+        "title": "端口映射规则",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "状态"
+                  },
+                  "properties": [
+                    {
+                      "id": "mappings",
+                      "value": [
+                        {
+                          "options": {
+                            "no": {
+                              "color": "red",
+                              "index": 1,
+                              "text": "禁用"
+                            },
+                            "yes": {
+                              "color": "green",
+                              "index": 0,
+                              "text": "启用"
+                            }
+                          },
+                          "type": "value"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true,
+              "sortBy": []
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-26": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "sort_desc(ikuai_dnat_connections{instance=\"$instance\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "Value": false,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 7,
+                      "Value": 6,
+                      "instance": 8,
+                      "interface": 2,
+                      "job": 9,
+                      "lan_addr": 4,
+                      "lan_port": 5,
+                      "protocol": 1,
+                      "tagname": 0,
+                      "wan_port": 3
+                    },
+                    "renameByName": {
+                      "Value": "当前连接",
+                      "interface": "WAN地址/接口",
+                      "lan_addr": "内网IP",
+                      "lan_port": "内网端口",
+                      "protocol": "协议",
+                      "tagname": "名称",
+                      "wan_port": "公网端口"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "每条启用 DNAT 规则当前匹配到的连接数。",
+        "id": 26,
+        "links": [],
+        "title": "端口映射当前连接",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "当前连接"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "none"
+                    },
+                    {
+                      "id": "decimals",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "当前连接"
+                }
+              ]
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-27": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_session_info{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "Value": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 7,
+                      "Value": 8,
+                      "app_name": 6,
+                      "dst_addr": 3,
+                      "dst_port": 4,
+                      "instance": 9,
+                      "job": 10,
+                      "protocol": 0,
+                      "src_addr": 1,
+                      "src_port": 2,
+                      "terminal_addr": 5
+                    },
+                    "renameByName": {
+                      "Value": "",
+                      "app_name": "应用",
+                      "dst_addr": "目标IP",
+                      "dst_port": "目标端口",
+                      "protocol": "协议",
+                      "src_addr": "来源IP",
+                      "src_port": "来源端口",
+                      "terminal_addr": "终端IP"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "需要 exporter 启用 --session-detail；默认关闭。该指标属于高基数数据，建议继续限制明细条数。",
+        "id": 27,
+        "links": [],
+        "title": "当前会话明细（可选）",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true,
+              "sortBy": []
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-28": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_version{instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "{{version}} ({{arch}})",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "设备固件版本与架构。",
+        "id": 28,
+        "links": [],
+        "title": "iKuai 版本",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "blue",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "value_and_name",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-29": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_up{id=\"host\", instance=\"$instance\"}",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "Exporter 能否正常连接爱快设备。",
+        "id": 29,
+        "links": [],
+        "title": "在线状态",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "离线"
+                      },
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "在线"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-30": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_exporter_metrics_collector_status{instance=\"$instance\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "instance": true,
+                      "job": true
+                    },
+                    "indexByName": {
+                      "Time": 3,
+                      "Value": 1,
+                      "instance": 4,
+                      "job": 5,
+                      "type": 0
+                    },
+                    "renameByName": {
+                      "Value": "状态",
+                      "type": "模块"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "各模块采集结果：0=成功，1=失败。3.x 的 session=1 为预期（模块不可用）。",
+        "id": 30,
+        "links": [],
+        "title": "采集器状态",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false,
+                  "minWidth": 50
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "状态"
+                  },
+                  "properties": [
+                    {
+                      "id": "mappings",
+                      "value": [
+                        {
+                          "options": {
+                            "0": {
+                              "color": "green",
+                              "index": 0,
+                              "text": "成功"
+                            },
+                            "1": {
+                              "color": "orange",
+                              "index": 1,
+                              "text": "失败/不可用"
+                            }
+                          },
+                          "type": "value"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "decimals",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "md",
+              "showHeader": true,
+              "sortBy": []
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-4": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "exemplar": false,
+                      "expr": "ikuai_memory_usage_bytes{instance=\"$instance\"}/ikuai_memory_size_bytes{instance=\"$instance\"}",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 4,
+        "links": [],
+        "title": "Memory Usage",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "decimals": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                },
+                "unit": "percentunit"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-6": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_uptime{id=\"host\", instance=\"$instance\"}",
+                      "legendFormat": "__auto",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 6,
+        "links": [],
+        "title": "Uptime",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "dtdhms"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    },
+    "panel-8": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "editorMode": "code",
+                      "expr": "ikuai_cpu_temperature{instance=\"$instance\"}\n",
+                      "legendFormat": "__auto",
+                      "range": true
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 8,
+        "links": [],
+        "title": "Temperature",
+        "vizConfig": {
+          "group": "stat",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "celsius"
+              },
+              "overrides": []
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            }
+          },
+          "version": "13.0.2"
+        }
+      }
+    }
+  },
+  "layout": {
+    "kind": "GridLayout",
+    "spec": {
+      "items": [
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-28"
+            },
+            "height": 4,
+            "width": 6,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-29"
+            },
+            "height": 4,
+            "width": 3,
+            "x": 6,
+            "y": 0
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-30"
+            },
+            "height": 4,
+            "width": 15,
+            "x": 9,
+            "y": 0
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-2"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 0,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-4"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 4,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-6"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 8,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-8"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 12,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-14"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 16,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-24"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 20,
+            "y": 4
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-17"
+            },
+            "height": 7,
+            "width": 12,
+            "x": 0,
+            "y": 8
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-18"
+            },
+            "height": 7,
+            "width": 12,
+            "x": 12,
+            "y": 8
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-12"
+            },
+            "height": 10,
+            "width": 12,
+            "x": 0,
+            "y": 15
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-10"
+            },
+            "height": 5,
+            "width": 12,
+            "x": 12,
+            "y": 15
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-15"
+            },
+            "height": 5,
+            "width": 12,
+            "x": 12,
+            "y": 20
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-13"
+            },
+            "height": 8,
+            "width": 12,
+            "x": 0,
+            "y": 25
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-11"
+            },
+            "height": 8,
+            "width": 12,
+            "x": 12,
+            "y": 25
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-19"
+            },
+            "height": 4,
+            "width": 5,
+            "x": 0,
+            "y": 33
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-20"
+            },
+            "height": 4,
+            "width": 5,
+            "x": 5,
+            "y": 33
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-21"
+            },
+            "height": 4,
+            "width": 5,
+            "x": 10,
+            "y": 33
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-22"
+            },
+            "height": 4,
+            "width": 5,
+            "x": 15,
+            "y": 33
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-23"
+            },
+            "height": 4,
+            "width": 4,
+            "x": 20,
+            "y": 33
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-25"
+            },
+            "height": 9,
+            "width": 12,
+            "x": 0,
+            "y": 37
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-26"
+            },
+            "height": 9,
+            "width": 12,
+            "x": 12,
+            "y": 37
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-27"
+            },
+            "height": 13,
+            "width": 24,
+            "x": 0,
+            "y": 46
+          }
+        }
+      ]
+    }
+  },
+  "links": [],
+  "liveNow": false,
+  "preload": false,
+  "tags": [
+    "dnat",
+    "golimit",
+    "grafana-13",
+    "health-panels",
+    "ikuai",
+    "ikuai-v3-v4",
+    "layout-v2",
+    "layout-v3",
+    "prometheus",
+    "session",
+    "spacious",
+    "v3-v4",
+    "public-interface-fixed"
+  ],
+  "timeSettings": {
+    "autoRefresh": "5s",
+    "autoRefreshIntervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "fiscalYearStartMonth": 0,
+    "from": "now-1h",
+    "hideTimepicker": false,
+    "timezone": "browser",
+    "to": "now"
+  },
+  "title": "爱快网关监控 - Enhanced Overview v3+v4 Fixed",
+  "variables": [
+    {
+      "kind": "QueryVariable",
+      "spec": {
+        "allowCustomValue": false,
+        "current": {
+          "text": "ikuai-exporter-aikr",
+          "value": "ikuai-exporter-aikr"
+        },
+        "definition": "label_values(ikuai_version, instance)",
+        "hide": "dontHide",
+        "includeAll": false,
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "group": "prometheus",
+          "kind": "DataQuery",
+          "spec": {
+            "query": "label_values(ikuai_version, instance)",
+            "refId": "StandardVariableQuery"
+          },
+          "version": "v0"
+        },
+        "refresh": "onDashboardLoad",
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": "disabled"
+      }
+    }
+  ]
+}
