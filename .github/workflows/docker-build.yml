@@ -33,6 +33,7 @@ jobs:
           context: .
           file: Dockerfile
           target: local
+          platforms: linux/amd64
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:latest

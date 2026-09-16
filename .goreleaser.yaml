@@ -19,10 +19,13 @@ before:
     - go generate ./...
 
 builds:
-  - env:
+  - id: ikuai-exporter
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
+    goarch:
+      - amd64
     ldflags:
       - -s -w -X github.com/jakeslee/ikuai-exporter/pkg/version.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
@@ -43,7 +46,11 @@ archives:
 
 dockers_v2:
   - id: ikuai-exporter
+    ids:
+      - ikuai-exporter
     dockerfile: Dockerfile
+    platforms:
+      - linux_amd64
     images:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}"
     tags:

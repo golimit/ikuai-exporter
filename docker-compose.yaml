@@ -1,24 +1,21 @@
-services:
-    ikuai-exporter-01:
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: local
-        restart: always
-        env_file:
-            - .env
-            - .env.instance-01
-        ports:
-            - "9401:9090"
+# 多目标 /probe（:9401）。配置：根目录 config.yaml（不入库）
+# 构建：docker compose up -d --build
+name: ikuai-exporter
 
-    ikuai-exporter-02:
+services:
+    exporter:
+        image: ikuai-exporter:local
         build:
             context: .
             dockerfile: Dockerfile
             target: local
-        restart: always
-        env_file:
-            - .env
-            - .env.instance-02
+        container_name: ikuai_exporter
+        restart: unless-stopped
         ports:
-            - "9402:9090"
+            - "9401:9401"
+        volumes:
+            - ./config.yaml:/config/config.yaml:ro
+        command:
+            - server
+            - --config.file=/config/config.yaml
+            - --web.listen-address=:9401

@@ -1,0 +1,34 @@
+default_auth: default
+timeout: 2
+insecure_skip_tls: true
+modules:
+  - sysStat
+  - lanDevice
+  - interfaceInfo
+  - dnat
+  - session
+session_detail: false
+session_detail_limit: 200
+dnat_session_detail: true
+dnat_session_detail_limit: 500
+
+auths:
+  default:
+    username: "CHANGE_ME"
+    password: "CHANGE_ME"
+  site_b:
+    username: "CHANGE_ME"
+    password: "CHANGE_ME"
+
+# 复制到 Prometheus：conf/prometheus/middleware_targets.yml
+middleware_targets:
+  - targets: [ 'http://192.168.x.x' ]
+    labels:
+      instance: 'ikuai-site-a'
+      middleware: 'ikuai'
+      # auth_module: 'site_b'
+
+  - targets: [ 'https://192.168.x.y' ]
+    labels:
+      instance: 'ikuai-site-b'
+      middleware: 'ikuai'

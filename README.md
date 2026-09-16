@@ -15,7 +15,7 @@
 | 端口映射 `dnat` | 规则清单、启用/禁用计数、每条规则当前连接数（3.x / 4.x） |
 | 连接会话 `session` | 会话总数；可选明细（**仅 4.x**；3.x 标记 `collector_status=1`） |
 | 关联分析 | DNAT 规则 × 当前会话 → `ikuai_dnat_connections` |
-| 部署 | 预构建镜像 / 本地 `docker compose` + `.env` |
+| 部署 | 预构建镜像 / 本地 `docker compose` + 根目录 `config.yaml` |
 | CI | `master` 推送自动构建并更新 GHCR `latest` |
 
 ### 采集架构
@@ -69,7 +69,31 @@ iKuai 设备
 
 ## 部署
 
-### 1. 预构建镜像
+**默认 HTTP 端口：`9401`**（legacy `/metrics` 与多目标 `/probe` 相同）。完整说明见 [docs/deploy.md](docs/deploy.md)。
+
+### 1. Prometheus 多目标（推荐，对齐 mysqld_exporter）
+
+单进程 + `middleware_targets.yml` 维护多台 iKuai；新增设备只改 targets，无需再起容器或占新端口。
+
+- 本仓库：根目录 **`config.yaml`**（不入库，从 [examples/config.yaml.example](examples/config.yaml.example) 复制）
+- Prometheus 主机：`conf/ikuai_exporter/config.yml` + `conf/prometheus/middleware_targets.yml`（`middleware_targets` 段可从此处同步）
+- Compose / Prometheus job 样板：见 [prometheus 仓库 `conf/ikuai_exporter/README.md`](https://github.com/golimit/prometheus)（或本机 `~/project/prometheus/conf/ikuai_exporter/README.md`）
+
+```shell
+docker compose up -d ikuai_exporter   # 在 prometheus 项目，监听 :9401
+```
+
+Prometheus 通过 `/probe?target=<ikuai_url>&auth_module=default` 抓取；`instance` 等业务标签由 file_sd 的 `labels` 提供，Grafana Dashboard 无需按 exporter 端口区分。
+
+某台设备使用不同账号时，在 `config.yaml` 的 `auths` 增加模块，并在 `middleware_targets` 的 `labels` 中设置 `auth_module: site_b`。
+
+**从「一机一容器」迁移：**
+
+1. 在 Prometheus 主机部署单个 `ikuai_exporter`，确认能访问各 iKuai 管理 URL。
+2. 将原 scrape 改为 `job_name: ikuai` + `middleware_targets.yml` 条目。
+3. 验证 `ikuai_up`、`ikuai_version` 按 `instance` 正常后，停止旧的 `ikuai-exporter-01/02` 等多实例 compose。
+
+### 2. 预构建镜像（legacy 单台）
 
 ```shell
 docker pull ghcr.io/golimit/ikuai-exporter:latest
@@ -80,55 +104,34 @@ services:
     ikuai-exporter:
         image: ghcr.io/golimit/ikuai-exporter:latest
         restart: always
+        command: [ "server", "--web.listen-address=:9401" ]
         environment:
             IKUAI_URL: "http://10.0.1.253"
             IKUAI_USERNAME: "test"
             IKUAI_PASSWORD: "test123"
         ports:
-            - "9090:9090"
+            - "9401:9401"
 ```
 
-### 2. 本地源码构建
+多目标模式使用根目录 `config.yaml`（见 [examples/config.yaml.example](examples/config.yaml.example)）。
 
-项目根目录提供 `docker-compose.yaml`，可一次部署多个实例（示例：`ikuai-exporter-01` → `:9401`，`ikuai-exporter-02` → `:9402`）：
+### 3. 本地源码构建
 
 ```shell
-cp .env.example .env
-cp .env.example.instance-01 .env.instance-01
-cp .env.example.instance-02 .env.instance-02
-# 编辑 .env 填入共享凭据，按需修改各实例 URL
+cp examples/config.yaml.example config.yaml
+# 编辑 config.yaml：auths、middleware_targets
 docker compose up -d --build
 ```
 
-凭据放在 `.env`，各实例 URL 放在 `.env.instance-01` / `.env.instance-02`（均已加入 `.gitignore`）。可参考 `.env.example*`。
-
-修改代码后需加 `--build`，否则会复用旧镜像。
-
-### 3. 多台 iKuai
-
-同一镜像部署多个实例，各自指向一台设备，Grafana 共用 Dashboard：
-
-```yaml
-services:
-    ikuai-exporter-01:
-        image: ghcr.io/golimit/ikuai-exporter:latest
-        environment:
-            IKUAI_URL: "http://10.0.1.253"       # 4.x 示例
-            IKUAI_USERNAME: "test"
-            IKUAI_PASSWORD: "test123"
-        ports: ["9090:9090"]
-    ikuai-exporter-02:
-        image: ghcr.io/golimit/ikuai-exporter:latest
-        environment:
-            IKUAI_URL: "http://10.0.2.253"       # 3.x 示例
-            IKUAI_USERNAME: "test"
-            IKUAI_PASSWORD: "test123"
-        ports: ["9091:9090"]
-```
+更新代码后执行 `docker compose up -d --build`。
 
 ### 验证
 
-访问 `http://IP:9090/metrics`。检查：
+**legacy：** 访问 `http://IP:9401/metrics`。
+
+**多目标：** `curl -sG 'http://IP:9401/probe' --data-urlencode 'target=http://10.0.1.253' | head`
+
+检查：
 
 - `ikuai_version{version="..."}` 版本是否正确
 - `ikuai_exporter_metrics_collector_status` 各模块是否为 `0`（3.x 的 `session` 为 `1` 属预期）
@@ -145,6 +148,8 @@ Usage:
 
 Flags:
     -h, --help                        help for server
+        --config.file string          YAML config for multi-target /probe mode
+        --web.listen-address string   HTTP listen address (default ":9401")
         --insecure-skip               Skip iKuai certificate verification (default true)
     -l, --level string                Log level (default "info")
         --modules strings             The modules to be collected. (default [sysStat,lanDevice,interfaceInfo,dnat,session])
@@ -154,12 +159,14 @@ Flags:
         --session-detail              Export per-session detail metrics (high cardinality) (default false)
         --session-detail-limit int    Max number of session detail series (default 200)
         --timeout int                 The timeout (seconds) for a request to iKuai API. (default 2)
-        --url string                  iKuai URL (default "http://10.0.1.253")
+        --url string                  iKuai URL (legacy single-target mode)
     -u, --username string             iKuai username (default "test")
 ```
 
 | 参数 | 环境变量 | 说明 | 默认值 |
 |:---|:---|:---|:---|
+| config.file | `IKUAI_CONFIG_FILE` | 多目标 YAML 配置路径 | — |
+| web.listen-address | `IKUAI_WEB_LISTEN_ADDRESS` | HTTP 监听地址 | `:9401` |
 | url | `IKUAI_URL` | 爱快地址 | `http://10.0.1.253` |
 | username | `IKUAI_USERNAME` | 登录用户名 | `test` |
 | password | `IKUAI_PASSWORD` | 登录密码 | `test123` |
