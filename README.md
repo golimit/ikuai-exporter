@@ -330,4 +330,6 @@ go build -o ikuai-exporter .
 
 ## 致谢
 
-上游项目：[jakeslee/ikuai-exporter](https://github.com/jakeslee/ikuai-exporter) 与 [jakeslee/ikuai](https://github.com/jakeslee/ikuai) SDK。
+感谢原作者 [jakeslee/ikuai-exporter](https://github.com/jakeslee/ikuai-exporter)。本项目在其基础上进行二次开发。
+
+另依赖 [jakeslee/ikuai](https://github.com/jakeslee/ikuai) Go SDK。
